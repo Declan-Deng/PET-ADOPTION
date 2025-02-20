@@ -20,32 +20,23 @@ import {
   IconButton,
   ActivityIndicator,
 } from "react-native-paper";
-import { UserContext } from "../context/UserContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.85;
 
-const HomeScreen = ({ navigation }) => {
-  const { petList } = React.useContext(UserContext);
+const HomeScreen = ({ navigation, route }) => {
   const scrollY = React.useRef(new Animated.Value(0)).current;
   const [featuredPets, setFeaturedPets] = React.useState([]);
-  const [petCounts, setPetCounts] = React.useState({
-    cat: 0,
-    dog: 0,
-    other: 0,
-  });
-  const [loading, setLoading] = React.useState(true);
-  const [refreshing, setRefreshing] = React.useState(false);
   const [imageLoadingStates, setImageLoadingStates] = React.useState({});
+  const [loading, setLoading] = React.useState(true);
+  const [pets, setPets] = React.useState([]);
+  const [refreshing, setRefreshing] = React.useState(false);
 
-  // 动画值
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
-  const scaleAnim = React.useRef(new Animated.Value(0.9)).current;
-  const translateY = React.useRef(new Animated.Value(50)).current;
-
+  // 获取宠物列表
   const fetchPets = React.useCallback(async () => {
     try {
+      setLoading(true);
       const token = await AsyncStorage.getItem("userToken");
       const response = await fetch("http://192.168.3.74:5001/api/pets", {
         headers: {
@@ -53,76 +44,84 @@ const HomeScreen = ({ navigation }) => {
         },
       });
       const data = await response.json();
-
-      if (Array.isArray(data)) {
-        // 统计每种类型的宠物数量
-        const counts = {
-          cat: data.filter((pet) => pet.type === "cat").length,
-          dog: data.filter((pet) => pet.type === "dog").length,
-          other: data.filter((pet) => pet.type === "other").length,
-        };
-        setPetCounts(counts);
-
-        // 随机选择3个宠物作为推荐
-        const shuffled = [...data].sort(() => 0.5 - Math.random());
-        const featured = shuffled.slice(0, 3).map((pet) => ({
-          _id: pet._id,
-          petName: pet.petName,
-          breed: pet.breed,
-          age: pet.age,
-          description: pet.description,
-          images: pet.images,
-          type: pet.type,
-          gender: pet.gender,
-          medical: {
-            healthStatus: pet.medical?.healthStatus || "健康",
-            vaccinated: pet.medical?.vaccinated || false,
-            sterilized: pet.medical?.sterilized || false,
-          },
-          requirements: pet.requirements,
-          owner: pet.owner,
-          createdAt: pet.createdAt,
-          updatedAt: pet.updatedAt,
-        }));
-        setFeaturedPets(featured);
-
-        // 启动入场动画
-        Animated.parallel([
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(scaleAnim, {
-            toValue: 1,
-            duration: 800,
-            easing: Easing.out(Easing.back(1.5)),
-            useNativeDriver: true,
-          }),
-          Animated.timing(translateY, {
-            toValue: 0,
-            duration: 800,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-        ]).start();
+      if (response.ok && Array.isArray(data)) {
+        setPets(data);
+        // 只从可领养的宠物中随机选择3个作为推荐
+        const availablePets = data.filter((pet) => pet.status === "available");
+        const shuffled = [...availablePets].sort(() => 0.5 - Math.random());
+        setFeaturedPets(shuffled.slice(0, 3));
       }
     } catch (error) {
       console.error("获取宠物列表失败:", error);
     } finally {
       setLoading(false);
     }
-  }, [fadeAnim, scaleAnim, translateY]);
+  }, []);
 
+  // 首次加载和刷新时获取数据
   React.useEffect(() => {
     fetchPets();
   }, [fetchPets]);
 
+  // 监听路由参数变化，用于发布成功后刷新列表
+  React.useEffect(() => {
+    if (route.params?.refresh) {
+      fetchPets();
+      // 清除刷新标记
+      navigation.setParams({ refresh: undefined });
+    }
+  }, [route.params?.refresh, fetchPets, navigation]);
+
+  // 下拉刷新处理
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
     await fetchPets();
     setRefreshing(false);
   }, [fetchPets]);
+
+  // 统计每种类型的可领养宠物数量
+  const petCounts = React.useMemo(
+    () => ({
+      cat: pets.filter(
+        (pet) => pet.type === "cat" && pet.status === "available"
+      ).length,
+      dog: pets.filter(
+        (pet) => pet.type === "dog" && pet.status === "available"
+      ).length,
+      other: pets.filter(
+        (pet) => pet.type === "other" && pet.status === "available"
+      ).length,
+    }),
+    [pets]
+  );
+
+  // 动画值
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+  const scaleAnim = React.useRef(new Animated.Value(0.9)).current;
+  const translateY = React.useRef(new Animated.Value(50)).current;
+
+  React.useEffect(() => {
+    // 启动入场动画
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 800,
+        easing: Easing.out(Easing.back(1.5)),
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: 800,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [pets]);
 
   const handleImageLoadStart = (petId) => {
     setImageLoadingStates((prev) => ({ ...prev, [petId]: true }));
@@ -163,21 +162,22 @@ const HomeScreen = ({ navigation }) => {
           style={[styles.featuredCard, { marginLeft: index === 0 ? 20 : 0 }]}
           onPress={() =>
             navigation.navigate("PetDetail", {
+              petId: pet._id,
               pet: pet,
             })
           }
         >
           <View style={styles.imageContainer}>
             <Card.Cover
-              source={{ uri: pet.image }}
+              source={{
+                uri:
+                  pet.images && pet.images.length > 0
+                    ? pet.images[0]
+                    : "https://via.placeholder.com/300x200?text=No+Image",
+              }}
               style={styles.featuredImage}
               onLoadStart={() => handleImageLoadStart(pet._id)}
               onLoadEnd={() => handleImageLoadEnd(pet._id)}
-              onError={(e) => {
-                console.log("图片加载失败，使用默认图片");
-                pet.image = "https://via.placeholder.com/300x200?text=No+Image";
-                setFeaturedPets([...featuredPets]);
-              }}
             />
             {imageLoadingStates[pet._id] && (
               <View style={styles.imageLoadingContainer}>
@@ -186,7 +186,9 @@ const HomeScreen = ({ navigation }) => {
             )}
           </View>
           <Card.Content style={styles.cardContent}>
-            <Title style={styles.cardTitle}>{pet.name}</Title>
+            <Title style={styles.cardTitle}>
+              {pet.petName || "未命名宠物"}
+            </Title>
             <View style={styles.cardInfo}>
               <Text style={styles.cardInfoText}>{pet.breed}</Text>
               <Text style={styles.cardInfoText}>{pet.age}</Text>
@@ -292,11 +294,6 @@ const HomeScreen = ({ navigation }) => {
           </Button>
         </Animated.View>
       </Animated.ScrollView>
-      {loading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#1a237e" />
-        </View>
-      )}
     </View>
   );
 };
@@ -419,16 +416,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.5)",
-  },
-  loadingContainer: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
   },
 });
 

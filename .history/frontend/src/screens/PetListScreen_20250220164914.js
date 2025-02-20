@@ -74,7 +74,9 @@ const PetListScreen = ({ navigation, route }) => {
 
       const matchesType = selectedType === "all" || pet.type === selectedType;
 
-      return matchesSearch && matchesType;
+      const isAvailable = pet.status === "available";
+
+      return matchesSearch && matchesType && isAvailable;
     });
   }, [pets, searchQuery, selectedType]);
 
@@ -85,13 +87,11 @@ const PetListScreen = ({ navigation, route }) => {
   }, [route.params?.filterType]);
 
   const renderPetCard = ({ item }) => {
-    // 检查图片URL并确保它是有效的
-    const defaultImage = "https://via.placeholder.com/300x200?text=No+Image";
+    // 检查图片URL
     const imageUrl =
-      item.images && item.images.length > 0 && item.images[0]
+      item.images && item.images.length > 0
         ? item.images[0]
-        : defaultImage;
-
+        : "https://via.placeholder.com/300x200?text=No+Image";
     console.log("宠物图片URL:", imageUrl);
     console.log("宠物数据:", item);
 
@@ -99,50 +99,21 @@ const PetListScreen = ({ navigation, route }) => {
       <Card
         style={styles.card}
         onPress={() => {
-          console.log("点击宠物卡片，导航到详情页面");
-          console.log("传递的宠物数据:", {
-            _id: item._id,
-            petName: item.petName,
-            images: item.images,
-            breed: item.breed,
-            age: item.age,
-            description: item.description,
-            owner: item.owner,
-            medical: item.medical,
-            requirements: item.requirements,
-            type: item.type,
-            gender: item.gender,
-          });
-
+          console.log("点击宠物卡片:", item._id);
           navigation.navigate("PetDetail", {
-            screen: "PetDetail",
-            params: {
-              pet: {
-                _id: item._id,
-                petName: item.petName,
-                images: item.images,
-                breed: item.breed,
-                age: item.age,
-                description: item.description,
-                owner: item.owner,
-                medical: item.medical,
-                requirements: item.requirements,
-                type: item.type,
-                gender: item.gender,
-              },
-            },
+            petId: item._id,
+            pet: item,
           });
         }}
       >
         <Card.Cover
           source={{ uri: imageUrl }}
           style={styles.cardImage}
-          onError={() => {
-            console.log("图片加载错误，使用默认图片");
-            if (item.images && item.images.length > 0) {
-              item.images[0] = defaultImage;
-              setPets([...pets]);
-            }
+          onError={(e) => {
+            console.log("图片加载错误:", e.nativeEvent.error);
+            // 如果图片加载失败，使用占位图片
+            e.target.src =
+              "https://via.placeholder.com/300x200?text=Error+Loading+Image";
           }}
         />
         <Card.Content style={styles.cardContent}>
@@ -154,7 +125,7 @@ const PetListScreen = ({ navigation, route }) => {
               {item.breed || "未知品种"}
             </Text>
             <Text variant="bodyMedium" style={styles.age}>
-              {item.age || "年龄未知"}
+              {item.age ? `${item.age}岁` : "年龄未知"}
             </Text>
           </View>
           <Text
