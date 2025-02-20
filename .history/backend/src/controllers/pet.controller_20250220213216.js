@@ -58,7 +58,6 @@ const getPets = async (req, res) => {
 // 获取所有宠物
 const getAllPets = async (req, res) => {
   try {
-    console.log("开始获取所有宠物列表...");
     const pets = await Pet.find()
       .populate({
         path: "owner",
@@ -70,12 +69,12 @@ const getAllPets = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    console.log("成功获取宠物列表，数量:", pets.length);
-    // 直接返回数组，不包装在data字段中
-    res.json(pets);
+    res.json({
+      message: "获取宠物列表成功",
+      data: pets,
+    });
   } catch (error) {
-    console.error("获取宠物列表失败:", error);
-    res.status(500).json({ message: "获取宠物列表失败", error: error.message });
+    res.status(500).json({ message: "服务器错误", error: error.message });
   }
 };
 

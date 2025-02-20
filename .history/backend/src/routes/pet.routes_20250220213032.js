@@ -12,8 +12,8 @@ const {
 } = require("../controllers/pet.controller");
 
 // 公开路由
-router.get("/", protect, getAllPets);
-router.get("/:id", protect, getPetById);
+router.get("/", getAllPets);
+router.get("/:id", getPetById);
 
 // 需要登录的路由
 router.post("/", protect, createPet);

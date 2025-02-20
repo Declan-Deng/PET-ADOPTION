@@ -58,7 +58,6 @@ const getPets = async (req, res) => {
 // 获取所有宠物
 const getAllPets = async (req, res) => {
   try {
-    console.log("开始获取所有宠物列表...");
     const pets = await Pet.find()
       .populate({
         path: "owner",
@@ -70,12 +69,12 @@ const getAllPets = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    console.log("成功获取宠物列表，数量:", pets.length);
-    // 直接返回数组，不包装在data字段中
-    res.json(pets);
+    res.json({
+      message: "获取宠物列表成功",
+      data: pets,
+    });
   } catch (error) {
-    console.error("获取宠物列表失败:", error);
-    res.status(500).json({ message: "获取宠物列表失败", error: error.message });
+    res.status(500).json({ message: "服务器错误", error: error.message });
   }
 };
 
@@ -202,58 +201,44 @@ const deletePet = async (req, res) => {
   }
 };
 
+// 取消发布宠物
 const cancelPublication = async (req, res) => {
   try {
-    console.log("开始处理取消发布请求...");
     const petId = req.params.id;
     const userId = req.user._id;
 
     // 查找宠物信息
     const pet = await Pet.findById(petId);
     if (!pet) {
-      console.log("未找到宠物信息:", petId);
       return res.status(404).json({ message: "未找到该宠物信息" });
     }
 
     // 验证是否为发布者
     if (pet.owner.toString() !== userId.toString()) {
-      console.log("权限验证失败:", {
-        petOwner: pet.owner.toString(),
-        requestUser: userId.toString(),
-      });
-      return res.status(403).json({ message: "只有发布者可以取消发布" });
+      return res.status(403).json({ message: "没有权限取消该发布" });
     }
 
-    // 检查是否有进行中的领养申请
+    // 检查是否有进行中的申请
     const activeAdoptions = await Adoption.find({
       pet: petId,
       status: "active",
     });
 
     if (activeAdoptions.length > 0) {
-      console.log("存在进行中的领养申请:", activeAdoptions.length);
       return res.status(400).json({
-        message: "该宠物有正在进行的领养申请,无法取消发布",
+        message: "该宠物有正在进行的领养申请，请先处理完申请再取消发布",
       });
     }
 
-    // 删除相关的领养申请
+    // 删除相关的申请记录
     await Adoption.deleteMany({ pet: petId });
-    console.log("已删除相关的领养申请");
 
     // 删除宠物信息
     await Pet.findByIdAndDelete(petId);
-    console.log("已删除宠物信息");
-
-    // 从用户的发布列表中移除
-    await User.findByIdAndUpdate(userId, {
-      $pull: { publications: petId },
-    });
-    console.log("已从用户发布列表中移除");
 
     res.json({
-      message: "已成功取消发布",
-      data: { petId },
+      message: "发布已取消",
+      data: { id: petId },
     });
   } catch (error) {
     console.error("取消发布失败:", error);
