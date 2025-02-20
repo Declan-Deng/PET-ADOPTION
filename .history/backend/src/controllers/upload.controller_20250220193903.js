@@ -2,21 +2,9 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const User = require("../models/user.model");
-const crypto = require("crypto");
 
 // 从环境变量获取服务器地址
 const SERVER_URL = process.env.SERVER_URL || "http://localhost:5001";
-
-// 生成唯一的文件名
-const generateUniqueFilename = (originalname) => {
-  const timestamp = Date.now();
-  const hash = crypto
-    .createHash("md5")
-    .update(originalname + timestamp)
-    .digest("hex");
-  const ext = path.extname(originalname);
-  return `${timestamp}-${hash}${ext}`;
-};
 
 // 确保上传目录存在
 const ensureUploadDirExists = () => {
@@ -35,7 +23,8 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
-    const filename = generateUniqueFilename(file.originalname);
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const filename = uniqueSuffix + path.extname(file.originalname);
     console.log("生成的文件名:", filename);
     cb(null, filename);
   },
@@ -71,11 +60,7 @@ const verifyFileExists = (filePath) => {
   if (!fs.existsSync(filePath)) {
     throw new Error(`文件未能成功保存到: ${filePath}`);
   }
-  const stats = fs.statSync(filePath);
-  if (stats.size === 0) {
-    throw new Error(`文件保存失败，文件大小为0: ${filePath}`);
-  }
-  console.log("文件已成功保存到:", filePath, "大小:", stats.size, "字节");
+  console.log("文件已成功保存到:", filePath);
   return true;
 };
 
@@ -132,30 +117,17 @@ const uploadAvatar = async (req, res) => {
 
 // 上传宠物图片
 const uploadImage = async (req, res) => {
-  let savedFilePath = null;
   try {
     console.log("开始处理宠物图片上传...");
-    console.log("请求体:", req.body);
-    console.log("上传的文件:", req.file);
-
     if (!req.file) {
       return res.status(400).json({ message: "请选择要上传的文件" });
     }
 
-    savedFilePath = path.join(__dirname, "../../uploads", req.file.filename);
-    verifyFileExists(savedFilePath);
+    const filePath = path.join(__dirname, "../../uploads", req.file.filename);
+    verifyFileExists(filePath);
 
     const imageUrl = buildImageUrl(req.file.filename);
     console.log("宠物图片URL:", imageUrl);
-
-    // 测试图片是否可访问
-    try {
-      await fetch(imageUrl);
-      console.log("图片URL可以正常访问");
-    } catch (error) {
-      console.error("图片URL访问测试失败:", error);
-      throw new Error("图片URL无法访问，请检查服务器配置");
-    }
 
     res.json({
       message: "图片上传成功",
@@ -164,12 +136,11 @@ const uploadImage = async (req, res) => {
   } catch (error) {
     console.error("上传图片失败:", error);
     // 如果文件已保存但处理失败，删除文件
-    if (savedFilePath && fs.existsSync(savedFilePath)) {
-      try {
-        fs.unlinkSync(savedFilePath);
-        console.log("已删除失败的上传文件:", savedFilePath);
-      } catch (e) {
-        console.error("删除失败的文件时出错:", e);
+    if (req.file) {
+      const filePath = path.join(__dirname, "../../uploads", req.file.filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+        console.log("已删除失败的上传文件:", filePath);
       }
     }
     res.status(500).json({

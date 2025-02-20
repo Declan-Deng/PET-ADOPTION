@@ -26,24 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // 静态文件服务配置
 app.use("/uploads", (req, res, next) => {
-  const filePath = path.join(__dirname, "../uploads", req.path);
-  console.log("请求静态文件:", req.path);
-  console.log("完整文件路径:", filePath);
-
-  // 检查文件是否存在
-  if (!fs.existsSync(filePath)) {
-    console.error("文件不存在:", filePath);
-    return res.status(404).send("文件不存在");
-  }
-
-  // 设置缓存控制头
-  res.set({
-    "Cache-Control": "no-cache, no-store, must-revalidate",
-    Pragma: "no-cache",
-    Expires: "0",
-  });
-
-  // 使用express.static处理文件
+  console.log("访问静态文件:", req.url);
   express.static(path.join(__dirname, "../uploads"))(req, res, next);
 });
 

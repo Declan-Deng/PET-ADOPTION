@@ -61,7 +61,9 @@ const upload = multer({
 
 // 构建图片URL的辅助函数
 const buildImageUrl = (filename) => {
-  const url = `${SERVER_URL}/uploads/${filename}`;
+  // 使用环境变量中的SERVER_URL，确保不使用localhost
+  const serverUrl = process.env.SERVER_URL.replace("localhost", "192.168.3.74");
+  const url = `${serverUrl}/uploads/${filename}`;
   console.log("构建的图片URL:", url);
   return url;
 };
