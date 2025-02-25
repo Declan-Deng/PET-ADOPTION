@@ -68,3 +68,55 @@ API 文档见 [API.md](./backend/API.md)
 3. 提交改动 (`git commit -m 'Add some AmazingFeature'`)
 4. 推送到分支 (`git push origin feature/AmazingFeature`)
 5. 开启 Pull Request
+
+# 宠物领养平台配置指南
+
+## IP 环境配置
+
+当您的 IP 环境发生变化时，只需要修改以下两个文件中的相关配置即可：
+
+### 1. 后端配置 (`backend/.env`)
+
+修改以下配置项：
+
+```env
+HOST=192.168.31.232            # 修改为您的新 IP
+SERVER_URL=http://192.168.31.232:5001  # 修改为您的新 IP
+UPLOAD_URL=http://192.168.31.232:5001/uploads  # 修改为您的新 IP
+```
+
+### 2. 前端配置 (`frontend/src/config.js`)
+
+修改以下配置项：
+
+```javascript
+export const API_BASE_URL = "http://192.168.31.232:5001";  # 修改为您的新 IP
+```
+
+## 注意事项
+
+1. 确保前后端的 IP 配置保持一致
+2. 修改配置后需要重启前后端服务
+3. 端口号（5001）可以保持不变，除非有特殊需求
+4. 修改后请确认以下功能是否正常：
+   - 图片上传和显示
+   - API 接口调用
+   - 静态资源访问
+
+## 重启服务
+
+配置修改后，请按以下步骤重启服务：
+
+1. 后端重启：
+
+```bash
+cd backend
+npm run dev  # 或其他启动命令
+```
+
+2. 前端重启：
+
+```bash
+cd frontend
+npm start  # 或其他启动命令
+```
