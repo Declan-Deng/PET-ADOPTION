@@ -1,0 +1,166 @@
+import { deletePet, getAllPets, Pet } from '@/services/pet';
+import { ExclamationCircleOutlined } from '@ant-design/icons';
+import {
+  ActionType,
+  PageContainer,
+  ProTable,
+} from '@ant-design/pro-components';
+import { Button, Image, message, Modal, Tag } from 'antd';
+import { useRef } from 'react';
+
+const { confirm } = Modal;
+
+const PetList = () => {
+  const actionRef = useRef<ActionType>();
+
+  const handleDelete = async (id: string) => {
+    confirm({
+      title: '确认删除',
+      icon: <ExclamationCircleOutlined />,
+      content: '确定要删除这个宠物信息吗？',
+      onOk: async () => {
+        try {
+          await deletePet(id);
+          message.success('删除成功');
+          actionRef.current?.reload();
+        } catch (error) {
+          message.error('删除失败');
+        }
+      },
+    });
+  };
+
+  const columns = [
+    {
+      title: '宠物照片',
+      dataIndex: ['images'],
+      render: (images: string[]) =>
+        images && images.length > 0 ? (
+          <Image
+            src={images[0]}
+            alt="宠物照片"
+            width={80}
+            height={80}
+            style={{ objectFit: 'cover' }}
+          />
+        ) : (
+          '暂无照片'
+        ),
+      search: false,
+    },
+    {
+      title: '宠物名称',
+      dataIndex: 'petName',
+    },
+    {
+      title: '类型',
+      dataIndex: 'type',
+      valueEnum: {
+        cat: '猫',
+        dog: '狗',
+        other: '其他',
+      },
+    },
+    {
+      title: '品种',
+      dataIndex: 'breed',
+    },
+    {
+      title: '年龄',
+      dataIndex: 'age',
+    },
+    {
+      title: '性别',
+      dataIndex: 'gender',
+      valueEnum: {
+        male: '公',
+        female: '母',
+        unknown: '未知',
+      },
+    },
+    {
+      title: '健康状况',
+      dataIndex: ['medical', 'healthStatus'],
+      render: (status: string) => {
+        const colorMap = {
+          健康: 'success',
+          亚健康: 'warning',
+          需要治疗: 'error',
+        };
+        return <Tag color={colorMap[status]}>{status}</Tag>;
+      },
+    },
+    {
+      title: '疫苗接种',
+      dataIndex: ['medical', 'vaccinated'],
+      render: (vaccinated: boolean) => (
+        <Tag color={vaccinated ? 'success' : 'warning'}>
+          {vaccinated ? '已接种' : '未接种'}
+        </Tag>
+      ),
+    },
+    {
+      title: '绝育情况',
+      dataIndex: ['medical', 'sterilized'],
+      render: (sterilized: boolean) => (
+        <Tag color={sterilized ? 'success' : 'warning'}>
+          {sterilized ? '已绝育' : '未绝育'}
+        </Tag>
+      ),
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      valueEnum: {
+        available: { text: '可领养', status: 'Success' },
+        pending: { text: '申请中', status: 'Processing' },
+        adopted: { text: '已领养', status: 'Default' },
+      },
+    },
+    {
+      title: '操作',
+      valueType: 'option',
+      render: (_: any, record: Pet) => [
+        <Button key="edit" type="link" href={`/pet/edit/${record._id}`}>
+          编辑
+        </Button>,
+        <Button
+          key="delete"
+          type="link"
+          danger
+          onClick={() => handleDelete(record._id)}
+        >
+          删除
+        </Button>,
+      ],
+    },
+  ];
+
+  return (
+    <PageContainer>
+      <ProTable<Pet>
+        headerTitle="宠物列表"
+        actionRef={actionRef}
+        rowKey="_id"
+        search={{
+          labelWidth: 120,
+        }}
+        toolBarRender={() => [
+          <Button type="primary" key="primary" href="/pet/create">
+            添加宠物
+          </Button>,
+        ]}
+        request={async () => {
+          const pets = await getAllPets();
+          return {
+            data: pets,
+            success: true,
+          };
+        }}
+        columns={columns}
+      />
+    </PageContainer>
+  );
+};
+
+export default PetList;
