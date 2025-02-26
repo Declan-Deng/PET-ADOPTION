@@ -66,13 +66,34 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { username, password } = req.body;
+    console.log("登录请求:", { username, password });
 
     // 查找用户
     const user = await User.findOne({
       $or: [{ email: username }, { username }],
+    }).select("+password");
+    console.log("查找到的用户:", {
+      _id: user?._id,
+      username: user?.username,
+      email: user?.email,
+      role: user?.role,
+      password: user?.password,
     });
 
-    if (!user || !(await user.comparePassword(password))) {
+    if (!user) {
+      console.log("用户不存在");
+      return res.status(401).json({ message: "用户名或密码错误" });
+    }
+
+    const isPasswordValid = await user.comparePassword(password);
+    console.log("密码验证结果:", isPasswordValid);
+    console.log("密码比较:", {
+      input: password,
+      hashed: user.password,
+    });
+
+    if (!isPasswordValid) {
+      console.log("密码错误");
       return res.status(401).json({ message: "用户名或密码错误" });
     }
 
