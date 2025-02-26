@@ -10,6 +10,7 @@ const authRoutes = require("./routes/auth.routes");
 const petRoutes = require("./routes/pet.routes");
 const adoptionRoutes = require("./routes/adoption.routes");
 const uploadRoutes = require("./routes/upload.routes");
+const userRoutes = require("./routes/user.routes");
 
 const app = express();
 
@@ -57,6 +58,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/pets", petRoutes);
 app.use("/api/adoptions", adoptionRoutes);
 app.use("/api/upload", uploadRoutes);
+app.use("/api/users", userRoutes);
 
 // 错误处理中间件
 app.use((err, req, res, next) => {
@@ -66,12 +68,13 @@ app.use((err, req, res, next) => {
 
 // 数据库连接
 mongoose
-  .connect(config.mongodb.uri, {
+  .connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
   .then(() => {
     console.log("数据库连接成功");
+    console.log("数据库URI:", process.env.MONGODB_URI);
   })
   .catch((err) => {
     console.error("数据库连接失败:", err);
@@ -79,10 +82,9 @@ mongoose
   });
 
 // 启动服务器
-const PORT = config.server.port;
-app.listen(PORT, () => {
-  console.log(`服务器运行在端口 ${PORT}`);
-  console.log(`静态文件服务地址: ${config.upload.url}`);
+app.listen(process.env.PORT, () => {
+  console.log(`服务器运行在端口 ${process.env.PORT}`);
+  console.log(`静态文件服务地址: ${process.env.UPLOAD_URL}`);
 });
 
 module.exports = app;
