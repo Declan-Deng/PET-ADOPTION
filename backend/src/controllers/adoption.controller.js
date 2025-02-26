@@ -275,6 +275,29 @@ const approveAdoption = async (req, res) => {
   }
 };
 
+// 获取所有领养申请（管理员）
+const getAllAdoptions = async (req, res) => {
+  try {
+    const adoptions = await Adoption.find()
+      .populate({
+        path: "pet",
+        select: "petName images type breed age gender",
+      })
+      .populate("applicant", "username profile")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      message: "获取申请列表成功",
+      data: adoptions,
+    });
+  } catch (error) {
+    console.error("获取申请列表失败:", error);
+    res.status(500).json({
+      message: error.message || "获取申请列表失败",
+    });
+  }
+};
+
 module.exports = {
   createAdoption,
   getUserAdoptions,
@@ -282,4 +305,5 @@ module.exports = {
   getAdoptionById,
   cancelAdoption,
   approveAdoption,
+  getAllAdoptions,
 };
