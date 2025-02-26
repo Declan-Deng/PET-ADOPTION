@@ -102,7 +102,10 @@ const userSchema = new mongoose.Schema(
 
 // 密码加密中间件
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+  // 如果密码已经是哈希值，跳过哈希
+  if (!this.isModified("password") || this.password.startsWith("$2a$")) {
+    return next();
+  }
 
   try {
     const salt = await bcrypt.genSalt(10);
@@ -115,7 +118,13 @@ userSchema.pre("save", async function (next) {
 
 // 验证密码方法
 userSchema.methods.comparePassword = async function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+  console.log("密码比较:", {
+    candidate: candidatePassword,
+    stored: this.password,
+  });
+  const isMatch = await bcrypt.compare(candidatePassword, this.password);
+  console.log("密码比较结果:", isMatch);
+  return isMatch;
 };
 
 const User = mongoose.model("User", userSchema);
