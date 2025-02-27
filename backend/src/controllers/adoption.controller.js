@@ -152,71 +152,45 @@ const getAdoptionById = async (req, res) => {
   }
 };
 
-// 取消领养申请
+// 删除领养申请（管理员专用）
+const deleteAdoption = async (req, res) => {
+  try {
+    const adoption = await Adoption.findById(req.params.id);
+    if (!adoption) {
+      return res.status(404).json({ message: "领养申请不存在" });
+    }
+
+    await Adoption.findByIdAndDelete(req.params.id);
+    res.json({ message: "领养申请已删除" });
+  } catch (error) {
+    console.error("删除领养申请失败:", error);
+    res.status(500).json({
+      message: error.message || "删除领养申请失败",
+    });
+  }
+};
+
+// 取消领养申请（用户专用）
 const cancelAdoption = async (req, res) => {
   try {
-    console.log("开始取消申请，ID:", req.params.id);
-    console.log("当前用户ID:", req.user._id);
-
     const adoption = await Adoption.findById(req.params.id);
-    console.log("找到的申请记录:", JSON.stringify(adoption, null, 2));
-
     if (!adoption) {
-      console.log("未找到申请记录");
-      return res.status(404).json({ message: "申请不存在" });
+      return res.status(404).json({ message: "领养申请不存在" });
     }
 
-    // 检查权限（只有申请人可以取消）
-    if (req.user._id.toString() !== adoption.applicant.toString()) {
-      console.log("权限检查失败", {
-        userId: req.user._id.toString(),
-        applicantId: adoption.applicant.toString(),
-      });
-      return res.status(403).json({ message: "没有权限取消此申请" });
+    // 检查是否是申请人本人
+    if (adoption.applicant.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "无权取消他人的申请" });
     }
 
-    // 检查状态（可以取消 active 或 pending 状态的申请）
-    console.log("当前申请状态:", adoption.status);
-    if (adoption.status === "cancelled") {
-      console.log("状态检查失败，申请已经被取消");
-      return res.status(400).json({ message: "该申请已经被取消" });
-    }
-
-    // 更新宠物的申请人数
-    await Pet.findByIdAndUpdate(adoption.pet, {
-      $inc: { applicants: -1 },
-    });
-
-    // 更新申请状态为已取消
     adoption.status = "cancelled";
-    const updatedAdoption = await adoption.save();
-    console.log("更新后的申请记录:", JSON.stringify(updatedAdoption, null, 2));
+    await adoption.save();
 
-    // 返回完整的更新后数据
-    const populatedAdoption = await Adoption.findById(updatedAdoption._id)
-      .populate({
-        path: "pet",
-        select: "petName images type breed age gender",
-        populate: {
-          path: "owner",
-          select: "username profile",
-        },
-      })
-      .populate("applicant", "username profile");
-
-    console.log(
-      "返回给客户端的数据:",
-      JSON.stringify(populatedAdoption, null, 2)
-    );
-
-    res.json({
-      message: "申请已取消",
-      data: populatedAdoption,
-    });
+    res.json({ message: "领养申请已取消" });
   } catch (error) {
-    console.error("取消申请失败:", error);
+    console.error("取消领养申请失败:", error);
     res.status(500).json({
-      message: error.message || "取消申请失败",
+      message: error.message || "取消领养申请失败",
     });
   }
 };
@@ -303,6 +277,7 @@ module.exports = {
   getUserAdoptions,
   getPetAdoptions,
   getAdoptionById,
+  deleteAdoption,
   cancelAdoption,
   approveAdoption,
   getAllAdoptions,

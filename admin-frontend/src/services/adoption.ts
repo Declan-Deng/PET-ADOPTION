@@ -45,3 +45,11 @@ export async function rejectAdoption(id: string) {
     method: 'POST',
   });
 }
+
+export async function deleteAdoption(id: string) {
+  return request<{
+    message: string;
+  }>(`/api/adoptions/${id}`, {
+    method: 'DELETE',
+  });
+}

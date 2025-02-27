@@ -8,10 +8,30 @@ export interface User {
     name: string;
     phone: string;
     address: string;
+    avatar?: string;
   };
   role: 'user' | 'admin';
   status: 'active' | 'disabled';
   createdAt: string;
+}
+
+export interface UserDetails extends User {
+  adoptions: Array<{
+    _id: string;
+    pet: {
+      petName: string;
+      type: string;
+    };
+    status: string;
+    createdAt: string;
+  }>;
+  publications: Array<{
+    _id: string;
+    petName: string;
+    type: string;
+    status: string;
+    createdAt: string;
+  }>;
 }
 
 export async function getAllUsers() {
@@ -20,11 +40,14 @@ export async function getAllUsers() {
   });
 }
 
-export async function updateUserStatus(
-  id: string,
-  status: 'active' | 'disabled',
-) {
-  return request<void>(`/api/users/${id}/status`, {
+export async function getUser(id: string) {
+  return request<UserDetails>(`/api/users/${id}`, {
+    method: 'GET',
+  });
+}
+
+export async function updateUserStatus(id: string, status: string) {
+  return request<User>(`/api/users/${id}/status`, {
     method: 'PUT',
     data: { status },
   });

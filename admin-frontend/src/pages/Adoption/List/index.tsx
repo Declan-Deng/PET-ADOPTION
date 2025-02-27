@@ -1,6 +1,7 @@
 import {
   Adoption,
   approveAdoption,
+  deleteAdoption,
   getAllAdoptions,
 } from '@/services/adoption';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
@@ -30,6 +31,23 @@ const AdoptionList = () => {
           actionRef.current?.reload();
         } catch (error) {
           message.error('操作失败');
+        }
+      },
+    });
+  };
+
+  const handleDelete = async (id: string) => {
+    confirm({
+      title: '确认删除',
+      icon: <ExclamationCircleOutlined />,
+      content: '确定要删除这个领养申请吗？删除后无法恢复。',
+      onOk: async () => {
+        try {
+          await deleteAdoption(id);
+          message.success('删除成功');
+          actionRef.current?.reload();
+        } catch (error) {
+          message.error('删除失败');
         }
       },
     });
@@ -89,6 +107,14 @@ const AdoptionList = () => {
             通过
           </Button>
         ),
+        <Button
+          key="delete"
+          type="link"
+          danger
+          onClick={() => handleDelete(record._id)}
+        >
+          删除
+        </Button>,
       ],
     },
   ];

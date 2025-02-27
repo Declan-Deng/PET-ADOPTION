@@ -1,17 +1,59 @@
-import { deletePet, getAllPets, Pet } from '@/services/pet';
-import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { deletePet, getAllPets } from '@/services/pet';
+import { ExclamationCircleOutlined, EyeOutlined } from '@ant-design/icons';
 import {
   ActionType,
   PageContainer,
+  ProColumns,
   ProTable,
 } from '@ant-design/pro-components';
-import { Button, Image, message, Modal, Tag } from 'antd';
-import { useRef } from 'react';
+import {
+  Avatar,
+  Button,
+  Descriptions,
+  Divider,
+  Drawer,
+  Image,
+  message,
+  Modal,
+  Space,
+  Tag,
+} from 'antd';
+import { useRef, useState } from 'react';
 
 const { confirm } = Modal;
 
+interface Pet {
+  _id: string;
+  petName: string;
+  type: 'cat' | 'dog' | 'other';
+  breed: string;
+  age: string;
+  gender: 'male' | 'female' | 'unknown';
+  description?: string;
+  requirements?: string;
+  images?: string[];
+  medical: {
+    healthStatus: '健康' | '亚健康' | '需要治疗';
+    vaccinated: boolean;
+    sterilized: boolean;
+  };
+  status: 'available' | 'pending' | 'adopted';
+  owner: {
+    _id: string;
+    username: string;
+    profile?: {
+      name?: string;
+      phone?: string;
+      address?: string;
+      avatar?: string;
+    };
+  };
+}
+
 const PetList = () => {
   const actionRef = useRef<ActionType>();
+  const [viewPet, setViewPet] = useState<Pet | null>(null);
+  const [drawerVisible, setDrawerVisible] = useState(false);
 
   const handleDelete = async (id: string) => {
     confirm({
@@ -30,83 +72,116 @@ const PetList = () => {
     });
   };
 
-  const columns = [
+  const showPetDetails = (record: Pet) => {
+    setViewPet(record);
+    setDrawerVisible(true);
+  };
+
+  const healthStatusColorMap: Record<string, string> = {
+    健康: 'success',
+    亚健康: 'warning',
+    需要治疗: 'error',
+  };
+
+  const columns: ProColumns<Pet>[] = [
     {
       title: '宠物照片',
-      dataIndex: ['images'],
-      render: (images: string[]) =>
-        images && images.length > 0 ? (
-          <Image
-            src={images[0]}
-            alt="宠物照片"
-            width={80}
-            height={80}
-            style={{ objectFit: 'cover' }}
-          />
+      dataIndex: 'images',
+      search: false,
+      render: (_, record) =>
+        record.images && record.images.length > 0 ? (
+          <Image.PreviewGroup>
+            <Space>
+              <Image
+                src={record.images[0]}
+                alt="宠物照片"
+                width={80}
+                height={80}
+                style={{ objectFit: 'cover' }}
+              />
+              {record.images.length > 1 && (
+                <Tag color="processing">+{record.images.length - 1}张</Tag>
+              )}
+            </Space>
+          </Image.PreviewGroup>
         ) : (
           '暂无照片'
         ),
-      search: false,
     },
     {
       title: '宠物名称',
       dataIndex: 'petName',
+      fieldProps: {
+        placeholder: '请输入宠物名称',
+      },
+    },
+    {
+      title: '发布者',
+      dataIndex: ['owner', 'username'],
+      fieldProps: {
+        placeholder: '请输入发布者用户名或真实姓名',
+      },
+      render: (_, record) => (
+        <Space>
+          <Avatar src={record.owner?.profile?.avatar} size="small">
+            {record.owner?.profile?.name?.[0] || record.owner?.username[0]}
+          </Avatar>
+          <span>{record.owner?.profile?.name || record.owner?.username}</span>
+        </Space>
+      ),
     },
     {
       title: '类型',
       dataIndex: 'type',
       valueEnum: {
-        cat: '猫',
-        dog: '狗',
-        other: '其他',
+        cat: { text: '猫' },
+        dog: { text: '狗' },
+        other: { text: '其他' },
       },
     },
     {
       title: '品种',
       dataIndex: 'breed',
+      search: false,
     },
     {
       title: '年龄',
       dataIndex: 'age',
+      search: false,
     },
     {
       title: '性别',
       dataIndex: 'gender',
       valueEnum: {
-        male: '公',
-        female: '母',
-        unknown: '未知',
+        male: { text: '公' },
+        female: { text: '母' },
+        unknown: { text: '未知' },
       },
     },
     {
       title: '健康状况',
       dataIndex: ['medical', 'healthStatus'],
-      render: (status: string) => {
-        const colorMap = {
-          健康: 'success',
-          亚健康: 'warning',
-          需要治疗: 'error',
-        };
-        return <Tag color={colorMap[status]}>{status}</Tag>;
+      valueEnum: {
+        健康: { text: '健康', status: 'Success' },
+        亚健康: { text: '亚健康', status: 'Warning' },
+        需要治疗: { text: '需要治疗', status: 'Error' },
       },
     },
     {
       title: '疫苗接种',
       dataIndex: ['medical', 'vaccinated'],
-      render: (vaccinated: boolean) => (
-        <Tag color={vaccinated ? 'success' : 'warning'}>
-          {vaccinated ? '已接种' : '未接种'}
-        </Tag>
-      ),
+      valueEnum: {
+        true: { text: '已接种', status: 'Success' },
+        false: { text: '未接种', status: 'Warning' },
+      },
     },
     {
       title: '绝育情况',
       dataIndex: ['medical', 'sterilized'],
-      render: (sterilized: boolean) => (
-        <Tag color={sterilized ? 'success' : 'warning'}>
-          {sterilized ? '已绝育' : '未绝育'}
-        </Tag>
-      ),
+      valueEnum: {
+        true: { text: '已绝育', status: 'Success' },
+        false: { text: '未绝育', status: 'Warning' },
+      },
     },
     {
       title: '状态',
@@ -120,9 +195,14 @@ const PetList = () => {
     {
       title: '操作',
       valueType: 'option',
-      render: (_: any, record: Pet) => [
-        <Button key="edit" type="link" href={`/pet/edit/${record._id}`}>
-          编辑
+      render: (_, record) => [
+        <Button
+          key="view"
+          type="link"
+          icon={<EyeOutlined />}
+          onClick={() => showPetDetails(record)}
+        >
+          查看详情
         </Button>,
         <Button
           key="delete"
@@ -144,21 +224,206 @@ const PetList = () => {
         rowKey="_id"
         search={{
           labelWidth: 120,
+          defaultCollapsed: false,
+          optionRender: (searchConfig, formProps, dom) => [...dom.reverse()],
         }}
         toolBarRender={() => [
           <Button type="primary" key="primary" href="/pet/create">
             添加宠物
           </Button>,
         ]}
-        request={async () => {
-          const pets = await getAllPets();
-          return {
-            data: pets,
-            success: true,
-          };
+        request={async (params) => {
+          try {
+            const pets = await getAllPets();
+            let filteredPets = [...pets];
+
+            // 按宠物名称过滤
+            if (params['petName']) {
+              filteredPets = filteredPets.filter((pet) =>
+                pet.petName
+                  .toLowerCase()
+                  .includes(params['petName'].toString().toLowerCase()),
+              );
+            }
+
+            // 按发布者名称过滤
+            if (params['owner.username']) {
+              const searchText = params['owner.username']
+                .toString()
+                .toLowerCase();
+              filteredPets = filteredPets.filter(
+                (pet) =>
+                  pet.owner.username.toLowerCase().includes(searchText) ||
+                  pet.owner.profile?.name?.toLowerCase().includes(searchText),
+              );
+            }
+
+            // 按类型过滤
+            if (params['type']) {
+              filteredPets = filteredPets.filter(
+                (pet) => pet.type === params['type'],
+              );
+            }
+
+            // 按性别过滤
+            if (params['gender']) {
+              filteredPets = filteredPets.filter(
+                (pet) => pet.gender === params['gender'],
+              );
+            }
+
+            // 按健康状况过滤
+            if (params['medical.healthStatus']) {
+              filteredPets = filteredPets.filter(
+                (pet) =>
+                  pet.medical.healthStatus === params['medical.healthStatus'],
+              );
+            }
+
+            // 按疫苗接种状况过滤
+            if (params['medical.vaccinated'] !== undefined) {
+              const isVaccinated = params['medical.vaccinated'] === 'true';
+              filteredPets = filteredPets.filter(
+                (pet) => pet.medical.vaccinated === isVaccinated,
+              );
+            }
+
+            // 按绝育情况过滤
+            if (params['medical.sterilized'] !== undefined) {
+              const isSterilized = params['medical.sterilized'] === 'true';
+              filteredPets = filteredPets.filter(
+                (pet) => pet.medical.sterilized === isSterilized,
+              );
+            }
+
+            // 按状态过滤
+            if (params['status']) {
+              filteredPets = filteredPets.filter(
+                (pet) => pet.status === params['status'],
+              );
+            }
+
+            return {
+              data: filteredPets,
+              success: true,
+              total: filteredPets.length,
+            };
+          } catch (error) {
+            message.error('获取宠物列表失败');
+            return {
+              data: [],
+              success: false,
+              total: 0,
+            };
+          }
         }}
         columns={columns}
       />
+
+      <Drawer
+        title="宠物详情"
+        placement="right"
+        width={600}
+        onClose={() => setDrawerVisible(false)}
+        visible={drawerVisible}
+      >
+        {viewPet && (
+          <>
+            <Image.PreviewGroup>
+              <Space wrap>
+                {viewPet.images?.map((image, index) => (
+                  <Image
+                    key={index}
+                    src={image}
+                    alt={`宠物照片 ${index + 1}`}
+                    width={200}
+                    height={200}
+                    style={{ objectFit: 'cover' }}
+                  />
+                ))}
+              </Space>
+            </Image.PreviewGroup>
+
+            <Descriptions column={1} style={{ marginTop: 24 }}>
+              <Descriptions.Item label="宠物名称">
+                {viewPet.petName}
+              </Descriptions.Item>
+              <Descriptions.Item label="类型">
+                {viewPet.type === 'cat'
+                  ? '猫'
+                  : viewPet.type === 'dog'
+                  ? '狗'
+                  : '其他'}
+              </Descriptions.Item>
+              <Descriptions.Item label="品种">
+                {viewPet.breed}
+              </Descriptions.Item>
+              <Descriptions.Item label="年龄">{viewPet.age}</Descriptions.Item>
+              <Descriptions.Item label="性别">
+                {viewPet.gender === 'male'
+                  ? '公'
+                  : viewPet.gender === 'female'
+                  ? '母'
+                  : '未知'}
+              </Descriptions.Item>
+              <Descriptions.Item label="健康状况">
+                <Tag color={healthStatusColorMap[viewPet.medical.healthStatus]}>
+                  {viewPet.medical.healthStatus}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="疫苗接种">
+                <Tag color={viewPet.medical.vaccinated ? 'success' : 'warning'}>
+                  {viewPet.medical.vaccinated ? '已接种' : '未接种'}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="绝育情况">
+                <Tag color={viewPet.medical.sterilized ? 'success' : 'warning'}>
+                  {viewPet.medical.sterilized ? '已绝育' : '未绝育'}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="描述">
+                {viewPet.description || '暂无描述'}
+              </Descriptions.Item>
+              <Descriptions.Item label="领养要求">
+                {viewPet.requirements || '暂无特殊要求'}
+              </Descriptions.Item>
+              <Descriptions.Item label="状态">
+                <Tag
+                  color={
+                    viewPet.status === 'available'
+                      ? 'success'
+                      : viewPet.status === 'pending'
+                      ? 'processing'
+                      : 'default'
+                  }
+                >
+                  {viewPet.status === 'available'
+                    ? '可领养'
+                    : viewPet.status === 'pending'
+                    ? '申请中'
+                    : '已领养'}
+                </Tag>
+              </Descriptions.Item>
+            </Descriptions>
+
+            <Divider style={{ margin: '24px 0' }} />
+
+            <Descriptions title="发布者信息" column={1}>
+              <Descriptions.Item label="姓名">
+                {viewPet.owner?.profile?.name ||
+                  viewPet.owner?.username ||
+                  '未设置'}
+              </Descriptions.Item>
+              <Descriptions.Item label="联系电话">
+                {viewPet.owner?.profile?.phone || '未设置'}
+              </Descriptions.Item>
+              <Descriptions.Item label="地址">
+                {viewPet.owner?.profile?.address || '未设置'}
+              </Descriptions.Item>
+            </Descriptions>
+          </>
+        )}
+      </Drawer>
     </PageContainer>
   );
 };

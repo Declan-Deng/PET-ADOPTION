@@ -161,7 +161,7 @@ const updatePet = async (req, res) => {
   }
 };
 
-// 删除宠物发布
+// 删除宠物发布（管理员专用）
 const deletePet = async (req, res) => {
   try {
     const pet = await Pet.findById(req.params.id);
@@ -173,18 +173,14 @@ const deletePet = async (req, res) => {
       });
     }
 
-    // 检查是否是宠物的发布者
-    if (pet.owner.toString() !== req.user._id.toString()) {
-      return res.status(403).json({
-        success: false,
-        message: "无权删除此宠物信息",
-      });
-    }
+    // 删除相关的领养申请
+    await Adoption.deleteMany({ pet: pet._id });
 
+    // 删除宠物信息
     await Pet.findByIdAndDelete(req.params.id);
 
-    // 从用户的发布列表中移除
-    await User.findByIdAndUpdate(req.user._id, {
+    // 从发布者的发布列表中移除
+    await User.findByIdAndUpdate(pet.owner, {
       $pull: { publications: pet._id },
     });
 

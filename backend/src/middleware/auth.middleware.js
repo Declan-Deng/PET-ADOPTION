@@ -53,6 +53,6 @@ const adminAuth = async (req, res, next) => {
 };
 
 module.exports = {
-  protect: protect,
+  protect,
   adminAuth,
 };
