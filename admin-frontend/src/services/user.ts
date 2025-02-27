@@ -52,3 +52,9 @@ export async function updateUserStatus(id: string, status: string) {
     data: { status },
   });
 }
+
+export async function deleteUser(id: string) {
+  return request<void>(`/api/users/${id}`, {
+    method: 'DELETE',
+  });
+}

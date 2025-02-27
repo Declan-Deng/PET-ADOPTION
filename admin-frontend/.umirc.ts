@@ -73,6 +73,12 @@ export default defineConfig({
           name: '用户列表',
           component: './UserManage/List',
         },
+        {
+          path: '/user-manage/details/:id',
+          name: '用户详情',
+          component: './UserManage/Details',
+          hideInMenu: true,
+        },
       ],
     },
     {

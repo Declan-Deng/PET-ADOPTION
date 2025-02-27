@@ -27,6 +27,11 @@ const protect = async (req, res, next) => {
         return res.status(401).json({ message: "用户不存在" });
       }
 
+      // 检查用户状态
+      if (user.status === "disabled") {
+        return res.status(403).json({ message: "账号已被禁用，请联系管理员" });
+      }
+
       req.user = user;
       req.token = token;
       next();

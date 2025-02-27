@@ -56,8 +56,11 @@ const getUser = async (req, res) => {
       .populate("pet", "petName type")
       .sort({ createdAt: -1 });
 
+    // 获取用户发布的宠物信息，包含更多详细信息
     const publications = await Pet.find({ owner: user._id })
-      .select("petName type status createdAt")
+      .select(
+        "petName type status createdAt images breed age gender medical description requirements"
+      )
       .sort({ createdAt: -1 });
 
     const userObj = user.toObject();

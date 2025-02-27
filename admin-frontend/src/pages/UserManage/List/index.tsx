@@ -1,11 +1,12 @@
-import { getAllUsers, updateUserStatus } from '@/services/user';
+import { deleteUser, getAllUsers, updateUserStatus } from '@/services/user';
+import { ExclamationCircleOutlined } from '@ant-design/icons';
 import {
   ActionType,
   PageContainer,
   ProColumns,
   ProTable,
 } from '@ant-design/pro-components';
-import { Avatar, message, Modal, Space, Switch } from 'antd';
+import { Avatar, Button, message, Modal, Space, Switch } from 'antd';
 import { useRef, useState } from 'react';
 
 const { confirm } = Modal;
@@ -29,35 +30,47 @@ interface User {
 
 const UserList = () => {
   const actionRef = useRef<ActionType>();
-  // 使用 Map 来存储用户状态，避免对象引用问题
-  const [loadedUsers, setLoadedUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<Record<string, boolean>>({});
 
   const handleStatusChange = async (checked: boolean, record: User) => {
+    if (record.role === 'admin') {
+      message.warning('管理员账号不能被禁用');
+      return;
+    }
+
     const newStatus = checked ? 'active' : 'disabled';
 
     confirm({
       title: `确认${checked ? '启用' : '禁用'}用户`,
       content: `确定要${checked ? '启用' : '禁用'}该用户吗？`,
       onOk: async () => {
-        // 设置loading状态
         setLoading((prev) => ({ ...prev, [record._id]: true }));
 
         try {
           await updateUserStatus(record._id, newStatus);
           message.success('操作成功');
-
-          // 更新本地数据
-          setLoadedUsers((prevUsers) =>
-            prevUsers.map((user) =>
-              user._id === record._id ? { ...user, status: newStatus } : user,
-            ),
-          );
+          actionRef.current?.reload();
         } catch (error) {
           message.error('操作失败');
         } finally {
-          // 清除loading状态
           setLoading((prev) => ({ ...prev, [record._id]: false }));
+        }
+      },
+    });
+  };
+
+  const handleDelete = async (id: string) => {
+    confirm({
+      title: '确认删除',
+      icon: <ExclamationCircleOutlined />,
+      content: '确定要删除该用户吗？删除后无法恢复。',
+      onOk: async () => {
+        try {
+          await deleteUser(id);
+          message.success('删除成功');
+          actionRef.current?.reload();
+        } catch (error) {
+          message.error('删除失败');
         }
       },
     });
@@ -66,15 +79,17 @@ const UserList = () => {
   const columns: ProColumns<User>[] = [
     {
       title: '用户信息',
-      dataIndex: 'profile',
-      search: false,
+      dataIndex: 'username',
+      fieldProps: {
+        placeholder: '请输入用户名或邮箱',
+      },
       render: (_, record) => (
         <Space>
           <Avatar src={record.profile.avatar} size="large">
-            {record.profile.name?.[0] || record.username[0]}
+            {record.username[0]}
           </Avatar>
           <Space direction="vertical" size={0}>
-            <div>{record.profile.name || record.username}</div>
+            <div>{record.username}</div>
             <div style={{ fontSize: '12px', color: '#999' }}>
               {record.email}
             </div>
@@ -85,23 +100,18 @@ const UserList = () => {
     {
       title: '电话',
       dataIndex: ['profile', 'phone'],
+      search: false,
     },
     {
       title: '地址',
       dataIndex: ['profile', 'address'],
       ellipsis: true,
-    },
-    {
-      title: '角色',
-      dataIndex: 'role',
-      valueEnum: {
-        user: { text: '普通用户' },
-        admin: { text: '管理员' },
-      },
+      search: false,
     },
     {
       title: '领养申请',
       dataIndex: 'adoptionCount',
+      search: false,
       render: (_, record) => (
         <a
           onClick={() =>
@@ -115,6 +125,7 @@ const UserList = () => {
     {
       title: '发布宠物',
       dataIndex: 'publicationCount',
+      search: false,
       render: (_, record) => (
         <a
           onClick={() =>
@@ -128,6 +139,10 @@ const UserList = () => {
     {
       title: '状态',
       dataIndex: 'status',
+      valueEnum: {
+        active: { text: '正常', status: 'Success' },
+        disabled: { text: '已禁用', status: 'Error' },
+      },
       render: (_, record) => (
         <Switch
           checkedChildren="启用"
@@ -135,13 +150,30 @@ const UserList = () => {
           checked={record.status === 'active'}
           loading={loading[record._id]}
           onChange={(checked) => handleStatusChange(checked, record)}
+          disabled={record.role === 'admin'}
         />
       ),
+    },
+    {
+      title: '操作',
+      valueType: 'option',
+      render: (_, record) => [
+        <Button
+          key="delete"
+          type="link"
+          danger
+          onClick={() => handleDelete(record._id)}
+          disabled={record.role === 'admin'}
+        >
+          删除
+        </Button>,
+      ],
     },
     {
       title: '注册时间',
       dataIndex: 'createdAt',
       valueType: 'dateTime',
+      search: false,
     },
   ];
 
@@ -153,24 +185,44 @@ const UserList = () => {
         rowKey="_id"
         search={{
           labelWidth: 120,
+          defaultCollapsed: false,
         }}
-        request={async () => {
+        request={async (params) => {
           try {
-            const data = await getAllUsers();
-            setLoadedUsers(data);
+            const users = await getAllUsers();
+            let filteredUsers = [...users];
+
+            // 按用户名或邮箱过滤
+            if (params.username) {
+              const searchText = params.username.toString().toLowerCase();
+              filteredUsers = filteredUsers.filter(
+                (user) =>
+                  user.username.toLowerCase().includes(searchText) ||
+                  user.email.toLowerCase().includes(searchText),
+              );
+            }
+
+            // 按状态过滤
+            if (params.status) {
+              filteredUsers = filteredUsers.filter(
+                (user) => user.status === params.status,
+              );
+            }
+
             return {
-              data,
+              data: filteredUsers,
               success: true,
+              total: filteredUsers.length,
             };
           } catch (error) {
             message.error('获取用户列表失败');
             return {
               data: [],
               success: false,
+              total: 0,
             };
           }
         }}
-        dataSource={loadedUsers}
         columns={columns}
       />
     </PageContainer>
