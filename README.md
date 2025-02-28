@@ -1,267 +1,267 @@
-# 宠物领养系统
+# 基于微服务架构的智能宠物领养管理平台
 
-一个完整的宠物领养平台解决方案，包含移动端用户应用（React Native）、Web 端管理系统（Ant Design Pro）和 Node.js 后端服务。
+本项目是一个基于微服务架构设计的综合性宠物领养管理平台，采用前后端分离的开发模式，整合了移动终端（React Native）、Web 管理系统（Ant Design Pro）和后端服务（Node.js）三大核心模块。该平台旨在通过现代化的技术栈和智能化的管理流程，提供一个高效、安全、人性化的宠物领养解决方案。
 
-## 项目架构
+## 系统架构
+
+### 整体架构设计
+
+项目采用分布式微服务架构，通过领域驱动设计（DDD）方法论进行业务划分，实现了用户端、管理端和服务端的解耦，确保了系统的高可用性和可扩展性。
 
 ```
 pet-adoption/
-├── frontend/                # React Native 移动端应用
-│   ├── src/
-│   │   ├── components/     # 可复用组件
+├── frontend/                # 移动终端应用
+│   ├── assets/             # 静态资源文件（图片、字体等）
+│   ├── src/                # 源代码目录
 │   │   ├── screens/        # 页面组件
-│   │   ├── navigation/     # 导航配置
+│   │   ├── components/     # 可复用组件
+│   │   ├── navigation/     # 路由导航配置
+│   │   ├── hooks/         # 自定义Hook
 │   │   ├── context/       # 全局状态管理
-│   │   ├── hooks/         # 自定义 Hooks
-│   │   ├── constants/     # 常量定义
-│   │   └── config.js      # 环境配置
-│   └── package.json
+│   │   └── constants/     # 常量定义
+│   ├── App.js              # 应用入口
+│   └── app.json           # 应用配置
 │
-├── admin-frontend/         # Ant Design Pro 管理后台
-│   ├── src/
-│   │   ├── pages/         # 页面组件
-│   │   ├── services/      # API 服务
-│   │   ├── models/        # 数据模型
-│   │   ├── utils/         # 工具函数
-│   │   └── access.ts      # 权限控制
-│   └── package.json
-│
-├── backend/               # Node.js 后端服务
-│   ├── src/
-│   │   ├── controllers/  # 业务控制器
+├── admin-frontend/         # Web管理系统
+│   ├── src/               # 源代码目录
+│   │   ├── pages/        # 页面组件
 │   │   ├── models/       # 数据模型
-│   │   ├── routes/       # API 路由
-│   │   ├── middleware/   # 中间件
-│   │   ├── services/     # 业务服务
-│   │   └── utils/        # 工具函数
-│   ├── scripts/          # 管理脚本
-│   └── uploads/          # 文件上传目录
-```
+│   │   ├── services/     # API服务
+│   │   ├── utils/        # 工具函数
+│   │   └── constants/    # 常量定义
+│   ├── config/            # 项目配置
+│   └── public/            # 静态资源
+│
+├── backend/               # 服务端
+    ├── src/              # 源代码目录
+    │   ├── controllers/  # 业务控制器
+    │   ├── models/       # 数据模型
+    │   ├── services/     # 业务服务
+    │   ├── middleware/   # 中间件
+    │   └── routes/       # API路由
+    ├── config/           # 配置文件
+    └── uploads/          # 文件存储
 
-## 主要功能
+## 核心功能模块
 
-### 移动端用户应用
+### 1. 移动终端应用系统
 
-- 用户认证（注册、登录、个人信息管理）
-- 宠物浏览和搜索
-- 领养申请和进度追踪
-- 个人宠物发布
-- 收藏和关注功能
-- 消息通知
+#### 1.1 用户身份管理模块
+- 多方式认证：手机号、邮箱、第三方社交账号登录
+- 实名认证系统：身份信息验证
+- 个人信息管理：头像、基本信息、联系方式
+- 安全设置：密码修改、隐私设置
 
-### Web 端管理系统
+#### 1.2 宠物信息管理模块
+- 智能宠物匹配推荐系统
+- 高级搜索功能：品种、年龄、性别、位置等多维度筛选
+- 宠物详情展示：图片轮播、健康状况、性格特征
+- 收藏与关注功能
+- 分享功能：社交媒体分享集成
 
-- 管理员认证和权限控制
-- 用户管理
-- 宠物信息管理
-- 领养申请审核
-- 数据统计和分析
+#### 1.3 领养流程管理
+- 在线申请系统
+- 进度追踪
+- 电子合同签署
+- 线下见面预约
+- 领养回访记录
 
-### 后端功能
+#### 1.4 社交互动系统
+- 实时聊天：与领养机构和其他用户
+- 消息推送：申请状态、系统通知
+- 评论与反馈
+- 社区互动：经验分享、宠物照片
 
-- RESTful API
-- JWT 认证
-- 文件上传
-- 数据验证
-- 错误处理
-- 日志记录
+#### 1.5 地理位置服务
+- 周边宠物机构定位
+- 智能路线规划
+- 位置共享功能
 
-## 技术栈
+### 2. Web管理系统
 
-### 移动端
+#### 2.1 数据可视化面板
+- 实时数据监控
+- 领养趋势分析
+- 用户行为分析
+- 运营数据报表
 
-- React Native
-- React Navigation
-- Axios
-- AsyncStorage
-- React Context
+#### 2.2 用户管理系统
+- 用户信息管理
+- 实名认证审核
+- 用户行为分析
+- 黑名单管理
 
-### 管理后台
+#### 2.3 宠物信息管理
+- 宠物档案管理
+- 健康记录追踪
+- 领养状态管理
+- 批量导入导出
 
-- React
-- Ant Design Pro
-- UmiJS
-- DVA
+#### 2.4 领养流程管理
+- 申请审核工作流
+- 预约安排系统
+- 回访跟踪管理
+- 问题处理流程
 
-### 后端
+#### 2.5 内容管理系统
+- 文章管理
+- 公告管理
+- 评论管理
+- SEO优化
 
-- Node.js
-- Express
-- MongoDB
-- Mongoose
-- JWT
-- Multer
+#### 2.6 系统配置管理
+- 角色权限管理
+- 系统参数配置
+- 日志审计
+- 备份恢复
 
-## 环境要求
+### 3. 后端服务系统
 
-- Node.js >= 14
+#### 3.1 API服务层
+- RESTful API设计
+- GraphQL查询支持
+- 接口版本控制
+- 性能优化
+
+#### 3.2 安全认证系统
+- JWT身份认证
+- OAuth2.0授权
+- RBAC权限控制
+- 防SQL注入
+
+#### 3.3 文件处理服务
+- 图片压缩和处理
+- 文件存储管理
+- CDN加速
+- 防盗链保护
+
+#### 3.4 消息服务
+- WebSocket实时通信
+- 消息队列
+- 推送服务
+- 短信服务集成
+
+#### 3.5 数据管理服务
+- 数据库优化
+- 缓存策略
+- 数据备份
+- 敏感数据加密
+
+## 技术栈详解
+
+### 移动端技术栈
+- React Native：跨平台开发框架
+- Expo SDK：开发工具集
+- React Navigation：路由导航
+- Redux Toolkit：状态管理
+- React Query：数据获取
+- Axios：HTTP客户端
+- AsyncStorage：本地存储
+- Socket.io-client：实时通信
+
+### Web端技术栈
+- React 18：UI框架
+- UmiJS 4：企业级框架
+- Ant Design Pro：UI组件库
+- TypeScript：类型系统
+- DVA：状态管理
+- ECharts：数据可视化
+- WebSocket：实时通信
+- Webpack：构建工具
+
+### 后端技术栈
+- Node.js：运行环境
+- Express：Web框架
+- MongoDB：数据库
+- Mongoose：ODM框架
+- Redis：缓存系统
+- JWT：身份认证
+- Socket.io：WebSocket服务
+- PM2：进程管理
+
+## 系统特性
+
+1. 高可用性
+- 服务器集群部署
+- 负载均衡
+- 故障自动转移
+- 数据库主从复制
+
+2. 可扩展性
+- 微服务架构
+- 模块化设计
+- 水平扩展支持
+- 插件化机制
+
+3. 安全性
+- 数据加密传输
+- 访问权限控制
+- 操作日志审计
+- 防攻击措施
+
+4. 性能优化
+- 前端性能优化
+- 数据库优化
+- 缓存策略
+- CDN加速
+
+## 部署架构
+
+### 开发环境
+- Node.js >= 16
 - MongoDB >= 4.4
-- React Native >= 0.63
-- Expo SDK >= 44
+- React Native >= 0.71
+- Expo SDK >= 48
+- UmiJS >= 4.0
 
-## 快速开始
+### 生产环境部署
+1. 后端服务部署
+   - 容器化部署
+   - 负载均衡配置
+   - 监控系统部署
+   - 日志收集
 
-### 1. 克隆项目
+2. 移动端部署
+   - Android/iOS应用发布
+   - 热更新配置
+   - 版本管理
+   - 错误监控
 
-```bash
-git clone https://github.com/your-username/pet-adoption.git
-cd pet-adoption
-```
+3. Web端部署
+   - 静态资源部署
+   - CDN配置
+   - SSL证书配置
+   - 性能监控
 
-### 2. 环境配置
-
-#### 后端配置 (backend/.env)
-
-```env
-NODE_ENV=development
-PORT=5001
-MONGODB_URI=mongodb://localhost:27017/pet-adoption
-JWT_SECRET=your-secret-key
-HOST=your-ip-address
-SERVER_URL=http://your-ip-address:5001
-UPLOAD_URL=http://your-ip-address:5001/uploads
-```
-
-#### 移动端配置 (frontend/src/config.js)
-
-```javascript
-export const API_BASE_URL = "http://your-ip-address:5001";
-```
-
-#### 管理后台配置 (admin-frontend/.umirc.ts)
-
-```typescript
-export default {
-  proxy: {
-    "/api": {
-      target: "http://your-ip-address:5001",
-      changeOrigin: true,
-    },
-  },
-};
-```
-
-### 3. 安装依赖
-
-后端：
-
-```bash
-cd backend
-npm install
-```
-
-移动端：
-
-```bash
-cd frontend
-npm install
-```
-
-管理后台：
-
-```bash
-cd admin-frontend
-npm install
-```
-
-### 4. 创建管理员账户
-
-```bash
-cd backend
-node scripts/createAdmin.js
-```
-
-### 5. 启动服务
-
-后端：
-
-```bash
-cd backend
-npm run dev
-```
-
-移动端：
-
-```bash
-cd frontend
-npm start
-```
-
-管理后台：
-
-```bash
-cd admin-frontend
-npm start
-```
-
-## 部署说明
-
-### 后端部署
-
-1. 配置生产环境变量
-2. 构建生产版本：`npm run build`
-3. 使用 PM2 启动：`pm2 start dist/server.js`
-
-### 移动端部署
-
-1. 配置生产环境 API 地址
-2. 使用 Expo 构建：`expo build:android` 或 `expo build:ios`
-
-### 管理后台部署
-
-1. 配置生产环境 API 地址
-2. 构建生产版本：`npm run build`
-3. 部署 dist 目录到 Web 服务器
-
-## 开发指南
+## 开发规范
 
 ### 代码规范
+- ESLint代码检查
+- Prettier代码格式化
+- TypeScript类型检查
+- 代码审查流程
 
-- 使用 ESLint 进行代码检查
-- 遵循 Airbnb JavaScript 风格指南
-- 使用 Prettier 进行代码格式化
+### 版本控制规范
+- Git Flow工作流
+- 语义化版本控制
+- 分支管理策略
+- 代码审查流程
 
-### Git 工作流
+## 项目维护
 
-1. 从 main 分支创建特性分支
-2. 提交代码时使用规范的 commit 消息
-3. 提交 Pull Request 前先同步主分支
-4. 通过 CI 检查后合并到主分支
+### 技术支持
+- 在线文档
+- 技术咨询
+- 问题跟踪
+- 版本更新
 
-### 提交消息规范
-
-- feat: 新功能
-- fix: 修复问题
-- docs: 文档变更
-- style: 代码格式
-- refactor: 代码重构
-- test: 测试相关
-- chore: 构建过程或辅助工具的变动
-
-## 常见问题
-
-### 1. 图片上传失败
-
-- 检查 uploads 目录权限
-- 确认 UPLOAD_URL 配置正确
-- 验证文件大小是否超过限制
-
-### 2. 管理后台登录失败
-
-- 确认管理员账户已创建
-- 检查 API 地址配置
-- 验证网络连接状态
-
-### 3. 移动端无法连接后端
-
-- 确认 IP 地址配置正确
-- 检查设备与服务器的网络连接
-- 验证后端服务是否正常运行
-
-## 维护者
-
-- [@your-name](https://github.com/your-username)
+### 运维支持
+- 系统监控
+- 性能优化
+- 安全维护
+- 数据备份
 
 ## 许可证
 
-[MIT](LICENSE)
+MIT License
+```
