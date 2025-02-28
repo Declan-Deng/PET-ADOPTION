@@ -252,13 +252,121 @@ const approveAdoption = async (req, res) => {
 // 获取所有领养申请（管理员）
 const getAllAdoptions = async (req, res) => {
   try {
-    const adoptions = await Adoption.find()
-      .populate({
-        path: "pet",
-        select: "petName images type breed age gender",
-      })
-      .populate("applicant", "username profile")
-      .sort({ createdAt: -1 });
+    console.log("收到查询参数:", req.query);
+    const {
+      "pet.petName": petName,
+      "pet.type": petType,
+      "applicant.profile.name": applicantName,
+      startTime,
+      endTime,
+      status,
+    } = req.query;
+
+    // 构建聚合管道
+    const pipeline = [
+      // 关联宠物信息
+      {
+        $lookup: {
+          from: "pets",
+          localField: "pet",
+          foreignField: "_id",
+          as: "petInfo",
+        },
+      },
+      {
+        $unwind: "$petInfo",
+      },
+      // 关联申请人信息
+      {
+        $lookup: {
+          from: "users",
+          localField: "applicant",
+          foreignField: "_id",
+          as: "applicantInfo",
+        },
+      },
+      {
+        $unwind: "$applicantInfo",
+      },
+      // 重构文档结构
+      {
+        $project: {
+          _id: 1,
+          status: 1,
+          reason: 1,
+          experience: 1,
+          livingCondition: 1,
+          createdAt: 1,
+          pet: {
+            _id: "$petInfo._id",
+            petName: "$petInfo.petName",
+            type: "$petInfo.type",
+          },
+          applicant: {
+            _id: "$applicantInfo._id",
+            username: "$applicantInfo.username",
+            profile: "$applicantInfo.profile",
+          },
+        },
+      },
+    ];
+
+    // 按宠物名称筛选
+    if (petName) {
+      pipeline.push({
+        $match: {
+          "pet.petName": new RegExp(petName, "i"),
+        },
+      });
+    }
+
+    // 按宠物类型筛选
+    if (petType) {
+      pipeline.push({
+        $match: {
+          "pet.type": petType,
+        },
+      });
+    }
+
+    // 按申请人姓名筛选
+    if (applicantName) {
+      pipeline.push({
+        $match: {
+          "applicant.profile.name": new RegExp(applicantName, "i"),
+        },
+      });
+    }
+
+    // 按申请时间范围筛选
+    if (startTime && endTime) {
+      pipeline.push({
+        $match: {
+          createdAt: {
+            $gte: new Date(startTime),
+            $lte: new Date(endTime),
+          },
+        },
+      });
+    }
+
+    // 按状态筛选
+    if (status) {
+      pipeline.push({
+        $match: {
+          status: status,
+        },
+      });
+    }
+
+    // 按创建时间排序
+    pipeline.push({
+      $sort: { createdAt: -1 },
+    });
+
+    console.log("执行聚合查询，pipeline:", JSON.stringify(pipeline, null, 2));
+    const adoptions = await Adoption.aggregate(pipeline);
+    console.log("查询结果数量:", adoptions.length);
 
     res.json({
       message: "获取申请列表成功",

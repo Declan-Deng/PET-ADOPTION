@@ -185,6 +185,13 @@ const MyAdoptionsScreen = ({ navigation }) => {
       <View style={styles.detailsContainer}>
         <Text style={styles.reasonTitle}>申请理由：</Text>
         <Text style={styles.reasonText}>{item.reason}</Text>
+
+        <Text style={styles.reasonTitle}>养宠经验：</Text>
+        <Text style={styles.reasonText}>{item.experience}</Text>
+
+        <Text style={styles.reasonTitle}>居住条件：</Text>
+        <Text style={styles.reasonText}>{item.livingCondition}</Text>
+
         {item.reviewNotes && (
           <>
             <Text style={styles.reasonTitle}>审核备注：</Text>

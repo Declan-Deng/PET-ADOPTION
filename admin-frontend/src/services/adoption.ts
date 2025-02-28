@@ -22,12 +22,20 @@ export interface Adoption {
   createdAt: string;
 }
 
-export async function getAllAdoptions() {
+export async function getAllAdoptions(params?: {
+  'pet.petName'?: string;
+  'pet.type'?: string;
+  'applicant.profile.name'?: string;
+  startTime?: string;
+  endTime?: string;
+  status?: string;
+}) {
   return request<{
     message: string;
     data: Adoption[];
   }>('/api/adoptions/all', {
     method: 'GET',
+    params,
   });
 }
 

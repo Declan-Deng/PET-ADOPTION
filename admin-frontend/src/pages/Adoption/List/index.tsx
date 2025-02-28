@@ -57,6 +57,9 @@ const AdoptionList = () => {
     {
       title: '宠物名称',
       dataIndex: ['pet', 'petName'],
+      fieldProps: {
+        placeholder: '请输入宠物名称',
+      },
     },
     {
       title: '宠物类型',
@@ -70,20 +73,46 @@ const AdoptionList = () => {
     {
       title: '申请人',
       dataIndex: ['applicant', 'profile', 'name'],
+      fieldProps: {
+        placeholder: '请输入申请人姓名',
+      },
     },
     {
       title: '联系电话',
       dataIndex: ['applicant', 'profile', 'phone'],
+      search: false,
     },
     {
       title: '申请理由',
       dataIndex: 'reason',
       ellipsis: true,
+      search: false,
+    },
+    {
+      title: '养宠经验',
+      dataIndex: 'experience',
+      ellipsis: true,
+      search: false,
+    },
+    {
+      title: '居住条件',
+      dataIndex: 'livingCondition',
+      ellipsis: true,
+      search: false,
     },
     {
       title: '申请时间',
       dataIndex: 'createdAt',
-      valueType: 'dateTime',
+      valueType: 'dateRange',
+      search: {
+        transform: (value) => {
+          return {
+            startTime: value[0],
+            endTime: value[1],
+          };
+        },
+      },
+      render: (_, record) => new Date(record.createdAt).toLocaleString(),
     },
     {
       title: '状态',
@@ -127,19 +156,30 @@ const AdoptionList = () => {
         rowKey="_id"
         search={{
           labelWidth: 120,
+          defaultCollapsed: false,
         }}
-        request={async () => {
+        request={async (params) => {
           try {
-            const { data } = await getAllAdoptions();
+            const { data } = await getAllAdoptions({
+              'pet.petName': params.pet?.petName,
+              'pet.type': params.pet?.type,
+              'applicant.profile.name': params.applicant?.profile?.name,
+              startTime: params.createdAt?.[0],
+              endTime: params.createdAt?.[1],
+              status: params.status,
+            });
+
             return {
               data: data || [],
               success: true,
+              total: (data || []).length,
             };
           } catch (error) {
             message.error('获取数据失败');
             return {
               data: [],
               success: false,
+              total: 0,
             };
           }
         }}
