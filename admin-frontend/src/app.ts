@@ -28,7 +28,7 @@ export async function getInitialState(): Promise<InitialState> {
 
 export const layout = () => {
   return {
-    logo: 'https://img.alicdn.com/tfs/TB1YHEpwUT1gK0jSZFhXXaAtVXa-28-27.svg',
+    logo: require('@/assets/logo.png'),
     menu: {
       locale: false,
     },

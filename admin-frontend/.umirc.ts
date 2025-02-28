@@ -6,6 +6,7 @@ export default defineConfig({
   model: {},
   initialState: {},
   request: {},
+  favicons: ['/favicon.png'],
   layout: {
     title: '宠物领养管理系统',
   },
