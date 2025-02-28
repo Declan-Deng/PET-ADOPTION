@@ -338,7 +338,7 @@ const getAllAdoptions = async (req, res) => {
       });
     }
 
-    // 按申请时间范围筛选
+    // 按申请时间筛选
     if (startTime && endTime) {
       pipeline.push({
         $match: {

@@ -172,8 +172,15 @@ const UserList = () => {
     {
       title: '注册时间',
       dataIndex: 'createdAt',
-      valueType: 'dateTime',
-      search: false,
+      valueType: 'dateRange',
+      search: {
+        transform: (value) => {
+          return {
+            createdAt: value,
+          };
+        },
+      },
+      render: (_, record) => new Date(record.createdAt).toLocaleString(),
     },
   ];
 
@@ -189,30 +196,37 @@ const UserList = () => {
         }}
         request={async (params) => {
           try {
-            const users = await getAllUsers();
-            let filteredUsers = [...users];
+            console.log('搜索参数:', params);
 
-            // 按用户名或邮箱过滤
+            // 构建查询参数
+            const queryParams: any = {};
+
+            // 添加用户名搜索
             if (params.username) {
-              const searchText = params.username.toString().toLowerCase();
-              filteredUsers = filteredUsers.filter(
-                (user) =>
-                  user.username.toLowerCase().includes(searchText) ||
-                  user.email.toLowerCase().includes(searchText),
-              );
+              queryParams.username = params.username;
             }
 
-            // 按状态过滤
+            // 添加状态搜索
             if (params.status) {
-              filteredUsers = filteredUsers.filter(
-                (user) => user.status === params.status,
-              );
+              queryParams.status = params.status;
             }
+
+            // 添加时间范围搜索
+            if (params.createdAt) {
+              queryParams.startTime = params.createdAt[0];
+              queryParams.endTime = params.createdAt[1];
+            }
+
+            console.log('发送到后端的参数:', queryParams);
+
+            // 调用后端接口，传递查询参数
+            const users = await getAllUsers(queryParams);
+            console.log('获取到的用户数据:', users);
 
             return {
-              data: filteredUsers,
+              data: users,
               success: true,
-              total: filteredUsers.length,
+              total: users.length,
             };
           } catch (error) {
             message.error('获取用户列表失败');

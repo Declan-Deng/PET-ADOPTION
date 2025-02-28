@@ -48,6 +48,7 @@ interface Pet {
       avatar?: string;
     };
   };
+  createdAt: string;
 }
 
 const PetList = () => {
@@ -121,6 +122,13 @@ const PetList = () => {
       fieldProps: {
         placeholder: '请输入发布者用户名或真实姓名',
       },
+      search: {
+        transform: (value) => {
+          return {
+            'owner.username': value,
+          };
+        },
+      },
       render: (_, record) => (
         <Space>
           <Avatar src={record.owner?.profile?.avatar} size="small">
@@ -166,6 +174,13 @@ const PetList = () => {
         亚健康: { text: '亚健康', status: 'Warning' },
         需要治疗: { text: '需要治疗', status: 'Error' },
       },
+      search: {
+        transform: (value) => {
+          return {
+            'medical.healthStatus': value,
+          };
+        },
+      },
     },
     {
       title: '疫苗接种',
@@ -174,6 +189,13 @@ const PetList = () => {
         true: { text: '已接种', status: 'Success' },
         false: { text: '未接种', status: 'Warning' },
       },
+      search: {
+        transform: (value) => {
+          return {
+            'medical.vaccinated': value,
+          };
+        },
+      },
     },
     {
       title: '绝育情况',
@@ -181,6 +203,13 @@ const PetList = () => {
       valueEnum: {
         true: { text: '已绝育', status: 'Success' },
         false: { text: '未绝育', status: 'Warning' },
+      },
+      search: {
+        transform: (value) => {
+          return {
+            'medical.sterilized': value,
+          };
+        },
       },
     },
     {
@@ -191,6 +220,19 @@ const PetList = () => {
         pending: { text: '申请中', status: 'Processing' },
         adopted: { text: '已领养', status: 'Default' },
       },
+    },
+    {
+      title: '发布时间',
+      dataIndex: 'createdAt',
+      valueType: 'dateRange',
+      search: {
+        transform: (value) => {
+          return {
+            createdAt: value,
+          };
+        },
+      },
+      render: (_, record) => new Date(record.createdAt).toLocaleString(),
     },
     {
       title: '操作',
@@ -234,41 +276,42 @@ const PetList = () => {
         ]}
         request={async (params) => {
           try {
+            console.log('搜索参数:', params);
+
+            // 获取所有宠物数据
             const pets = await getAllPets();
             let filteredPets = [...pets];
 
             // 按宠物名称过滤
-            if (params['petName']) {
+            if (params.petName) {
               filteredPets = filteredPets.filter((pet) =>
                 pet.petName
                   .toLowerCase()
-                  .includes(params['petName'].toString().toLowerCase()),
+                  .includes(params.petName.toLowerCase()),
               );
             }
 
-            // 按发布者名称过滤
+            // 按发布者过滤
             if (params['owner.username']) {
-              const searchText = params['owner.username']
-                .toString()
-                .toLowerCase();
+              const searchText = params['owner.username'].toLowerCase();
               filteredPets = filteredPets.filter(
                 (pet) =>
-                  pet.owner.username.toLowerCase().includes(searchText) ||
-                  pet.owner.profile?.name?.toLowerCase().includes(searchText),
+                  pet.owner?.username?.toLowerCase().includes(searchText) ||
+                  pet.owner?.profile?.name?.toLowerCase().includes(searchText),
               );
             }
 
             // 按类型过滤
-            if (params['type']) {
+            if (params.type) {
               filteredPets = filteredPets.filter(
-                (pet) => pet.type === params['type'],
+                (pet) => pet.type === params.type,
               );
             }
 
             // 按性别过滤
-            if (params['gender']) {
+            if (params.gender) {
               filteredPets = filteredPets.filter(
-                (pet) => pet.gender === params['gender'],
+                (pet) => pet.gender === params.gender,
               );
             }
 
@@ -280,8 +323,8 @@ const PetList = () => {
               );
             }
 
-            // 按疫苗接种状况过滤
-            if (params['medical.vaccinated'] !== undefined) {
+            // 按疫苗接种过滤
+            if (params['medical.vaccinated']) {
               const isVaccinated = params['medical.vaccinated'] === 'true';
               filteredPets = filteredPets.filter(
                 (pet) => pet.medical.vaccinated === isVaccinated,
@@ -289,7 +332,7 @@ const PetList = () => {
             }
 
             // 按绝育情况过滤
-            if (params['medical.sterilized'] !== undefined) {
+            if (params['medical.sterilized']) {
               const isSterilized = params['medical.sterilized'] === 'true';
               filteredPets = filteredPets.filter(
                 (pet) => pet.medical.sterilized === isSterilized,
@@ -297,11 +340,45 @@ const PetList = () => {
             }
 
             // 按状态过滤
-            if (params['status']) {
+            if (params.status) {
               filteredPets = filteredPets.filter(
-                (pet) => pet.status === params['status'],
+                (pet) => pet.status === params.status,
               );
             }
+
+            // 按发布时间过滤
+            if (params.createdAt && params.createdAt.length === 2) {
+              const startTime = new Date(params.createdAt[0]).setHours(
+                0,
+                0,
+                0,
+                0,
+              );
+              const endTime = new Date(params.createdAt[1]).setHours(
+                23,
+                59,
+                59,
+                999,
+              );
+              console.log('时间过滤条件:', {
+                startTime: new Date(startTime).toLocaleString(),
+                endTime: new Date(endTime).toLocaleString(),
+              });
+
+              filteredPets = filteredPets.filter((pet) => {
+                const petTime = new Date(pet.createdAt).getTime();
+                console.log('宠物发布时间:', {
+                  petName: pet.petName,
+                  createdAt: new Date(pet.createdAt).toLocaleString(),
+                  isInRange: petTime >= startTime && petTime <= endTime,
+                });
+                return petTime >= startTime && petTime <= endTime;
+              });
+
+              console.log('时间过滤后的结果数量:', filteredPets.length);
+            }
+
+            console.log('过滤后的宠物数据:', filteredPets);
 
             return {
               data: filteredPets,
@@ -309,6 +386,7 @@ const PetList = () => {
               total: filteredPets.length,
             };
           } catch (error) {
+            console.error('获取宠物列表失败:', error);
             message.error('获取宠物列表失败');
             return {
               data: [],

@@ -60,6 +60,13 @@ const AdoptionList = () => {
       fieldProps: {
         placeholder: '请输入宠物名称',
       },
+      search: {
+        transform: (value) => {
+          return {
+            'pet.petName': value,
+          };
+        },
+      },
     },
     {
       title: '宠物类型',
@@ -69,12 +76,26 @@ const AdoptionList = () => {
         dog: { text: '狗' },
         other: { text: '其他' },
       },
+      search: {
+        transform: (value) => {
+          return {
+            'pet.type': value,
+          };
+        },
+      },
     },
     {
       title: '申请人',
       dataIndex: ['applicant', 'profile', 'name'],
       fieldProps: {
         placeholder: '请输入申请人姓名',
+      },
+      search: {
+        transform: (value) => {
+          return {
+            'applicant.profile.name': value,
+          };
+        },
       },
     },
     {
@@ -107,8 +128,7 @@ const AdoptionList = () => {
       search: {
         transform: (value) => {
           return {
-            startTime: value[0],
-            endTime: value[1],
+            createdAt: value,
           };
         },
       },
@@ -160,21 +180,58 @@ const AdoptionList = () => {
         }}
         request={async (params) => {
           try {
-            const { data } = await getAllAdoptions({
-              'pet.petName': params.pet?.petName,
-              'pet.type': params.pet?.type,
-              'applicant.profile.name': params.applicant?.profile?.name,
-              startTime: params.createdAt?.[0],
-              endTime: params.createdAt?.[1],
-              status: params.status,
-            });
+            console.log('搜索参数:', params);
+
+            // 构建查询参数
+            const queryParams: any = {};
+
+            // 添加宠物名称搜索
+            if (params['pet.petName']) {
+              queryParams['pet.petName'] = params['pet.petName'];
+            }
+
+            // 添加宠物类型搜索
+            if (params['pet.type']) {
+              queryParams['pet.type'] = params['pet.type'];
+            }
+
+            // 添加申请人姓名搜索
+            if (params['applicant.profile.name']) {
+              queryParams['applicant.profile.name'] =
+                params['applicant.profile.name'];
+            }
+
+            // 添加状态搜索
+            if (params.status) {
+              queryParams.status = params.status;
+            }
+
+            // 添加时间范围搜索
+            if (params.createdAt) {
+              queryParams.startTime = params.createdAt[0];
+              queryParams.endTime = params.createdAt[1];
+            }
+
+            console.log('发送到后端的参数:', queryParams);
+
+            const response = await getAllAdoptions(queryParams);
+            console.log('获取到的申请数据:', response);
+
+            if (!response || !response.data) {
+              return {
+                data: [],
+                success: true,
+                total: 0,
+              };
+            }
 
             return {
-              data: data || [],
+              data: response.data,
               success: true,
-              total: (data || []).length,
+              total: response.data.length,
             };
           } catch (error) {
+            console.error('获取数据失败:', error);
             message.error('获取数据失败');
             return {
               data: [],

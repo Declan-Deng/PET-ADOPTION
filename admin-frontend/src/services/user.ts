@@ -13,6 +13,8 @@ export interface User {
   role: 'user' | 'admin';
   status: 'active' | 'disabled';
   createdAt: string;
+  adoptionCount: number;
+  publicationCount: number;
 }
 
 export interface UserDetails extends User {
@@ -34,9 +36,15 @@ export interface UserDetails extends User {
   }>;
 }
 
-export async function getAllUsers() {
-  return request<User[]>('/api/users', {
+export async function getAllUsers(params?: {
+  username?: string;
+  status?: string;
+  startTime?: string;
+  endTime?: string;
+}): Promise<User[]> {
+  return request('/api/users', {
     method: 'GET',
+    params,
   });
 }
 

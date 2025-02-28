@@ -21,9 +21,21 @@ export interface Pet {
   updatedAt: string;
 }
 
-export async function getAllPets() {
+export async function getAllPets(params?: {
+  petName?: string;
+  'owner.username'?: string;
+  type?: string;
+  gender?: string;
+  'medical.healthStatus'?: string;
+  'medical.vaccinated'?: boolean;
+  'medical.sterilized'?: boolean;
+  status?: string;
+  startTime?: string;
+  endTime?: string;
+}) {
   return request<Pet[]>('/api/pets', {
     method: 'GET',
+    params,
   });
 }
 

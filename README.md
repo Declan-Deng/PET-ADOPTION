@@ -111,32 +111,6 @@ pet-adoption/
 - React Native/Expo 开发环境
 - UmiJS 开发环境
 
-## 开发指南
-
-### 后端服务启动
-
-```bash
-cd backend
-npm install
-npm run dev
-```
-
-### 移动端开发
-
-```bash
-cd frontend
-npm install
-npm start
-```
-
-### 管理后台开发
-
-```bash
-cd admin-frontend
-npm install
-npm start
-```
-
 ## 部署说明
 
 ### 后端部署
@@ -162,12 +136,6 @@ npm start
 - 管理后台实现了基于角色的访问控制（RBAC）
 - 敏感信息（如密码）进行加密存储
 
-## 维护说明
-
-- 定期更新依赖包以修复安全漏洞
-- 保持代码规范和文档的同步更新
-- 遵循 Git 工作流程进行版本控制
-
 ## 主要功能
 
 ### 移动端用户应用
@@ -176,16 +144,15 @@ npm start
 - 宠物浏览和搜索
 - 领养申请和进度追踪
 - 个人宠物发布
-- 收藏和关注功能
-- 消息通知
+- 收藏功能（可开发）
 
 ### Web 端管理系统
 
-- 管理员认证和权限控制
+- 管理员认证
 - 用户管理
 - 宠物信息管理
 - 领养申请审核
-- 数据统计和分析
+- 数据统计和分析（可开发）
 
 ### 后端功能
 
@@ -194,7 +161,6 @@ npm start
 - 文件上传
 - 数据验证
 - 错误处理
-- 日志记录
 
 ## 技术栈
 
@@ -222,32 +188,34 @@ npm start
 - JWT
 - Multer
 
-## 快速开始
-
-### 1. 克隆项目
-
-```bash
-git clone https://github.com/your-username/pet-adoption.git
-cd pet-adoption
-```
-
-### 2. 环境配置
+### 环境配置
 
 #### 后端配置 (backend/.env)
 
 ```env
-NODE_ENV=development
-PORT=5001
+# 数据库配置
 MONGODB_URI=mongodb://localhost:27017/pet-adoption
-JWT_SECRET=your-secret-key
-HOST=your-ip-address
+
+# 服务器配置
+PORT=5001
+HOST=192.168.31.232
 SERVER_URL=http://your-ip-address:5001
+
+# JWT配置
+JWT_SECRET=your-secret-key
+
+# 环境配置
+NODE_ENV=development
+
+# 文件上传配置
+UPLOAD_PATH=uploads
 UPLOAD_URL=http://your-ip-address:5001/uploads
 ```
 
 #### 移动端配置 (frontend/src/config.js)
 
 ```javascript
+// API配置
 export const API_BASE_URL = "http://your-ip-address:5001";
 ```
 
@@ -264,17 +232,25 @@ export default {
 };
 ```
 
-### 3. 安装依赖
+### 安装依赖
 
 后端：
 
 ```bash
 cd backend
-npm install
+npm run dev
 ```
 
 移动端：
 
+```bash
+cd frontend
+sudo npm start
 ```
 
+管理后台：
+
+```bash
+cd admin-frontend
+sudo npm start
 ```

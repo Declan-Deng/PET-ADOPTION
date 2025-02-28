@@ -5,7 +5,31 @@ const Pet = require("../models/pet.model");
 // 获取所有用户
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select("-password");
+    const { startTime, endTime, username, status } = req.query;
+    let query = {};
+
+    // 添加时间范围查询
+    if (startTime && endTime) {
+      query.createdAt = {
+        $gte: new Date(startTime),
+        $lte: new Date(endTime),
+      };
+    }
+
+    // 添加用户名或邮箱查询
+    if (username) {
+      query.$or = [
+        { username: new RegExp(username, "i") },
+        { email: new RegExp(username, "i") },
+      ];
+    }
+
+    // 添加状态查询
+    if (status) {
+      query.status = status;
+    }
+
+    const users = await User.find(query).select("-password");
 
     // 获取每个用户的领养申请数量和发布数量
     const usersWithCounts = await Promise.all(
