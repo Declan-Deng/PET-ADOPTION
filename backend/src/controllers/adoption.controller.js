@@ -104,6 +104,23 @@ const getUserAdoptions = async (req, res) => {
 // 获取宠物的申请列表
 const getPetAdoptions = async (req, res) => {
   try {
+    // 修复申请人数计数
+    const pet = await Pet.findById(req.params.petId);
+    if (pet) {
+      // 获取实际的活跃申请数量
+      const activeAdoptionsCount = await Adoption.countDocuments({
+        pet: req.params.petId,
+        status: "active",
+      });
+
+      // 如果计数不匹配，更新为正确的数量
+      if (pet.applicants !== activeAdoptionsCount) {
+        await Pet.findByIdAndUpdate(req.params.petId, {
+          applicants: activeAdoptionsCount,
+        });
+      }
+    }
+
     const adoptions = await Adoption.find({ pet: req.params.petId })
       .populate("applicant", "username profile")
       .sort({ createdAt: -1 });
@@ -160,6 +177,13 @@ const deleteAdoption = async (req, res) => {
       return res.status(404).json({ message: "领养申请不存在" });
     }
 
+    // 如果申请状态是active，需要减少宠物的申请人数
+    if (adoption.status === "active") {
+      await Pet.findByIdAndUpdate(adoption.pet, {
+        $inc: { applicants: -1 },
+      });
+    }
+
     await Adoption.findByIdAndDelete(req.params.id);
     res.json({ message: "领养申请已删除" });
   } catch (error) {
@@ -181,6 +205,13 @@ const cancelAdoption = async (req, res) => {
     // 检查是否是申请人本人
     if (adoption.applicant.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: "无权取消他人的申请" });
+    }
+
+    // 如果申请状态是active，需要减少宠物的申请人数
+    if (adoption.status === "active") {
+      await Pet.findByIdAndUpdate(adoption.pet, {
+        $inc: { applicants: -1 },
+      });
     }
 
     adoption.status = "cancelled";

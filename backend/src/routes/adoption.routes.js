@@ -14,14 +14,14 @@ const {
 
 // 管理员路由
 router.get("/all", protect, adminAuth, getAllAdoptions);
-router.put("/:id/approve", protect, adminAuth, approveAdoption);
 router.delete("/:id", protect, adminAuth, deleteAdoption);
 
-// 用户路由
+// 普通用户路由
+router.put("/:id/approve", protect, approveAdoption);
+router.post("/", protect, createAdoption);
 router.get("/", protect, getUserAdoptions);
 router.get("/pet/:petId", protect, getPetAdoptions);
 router.get("/:id", protect, getAdoptionById);
-router.post("/", protect, createAdoption);
-router.post("/:id/cancel", protect, cancelAdoption);
+router.delete("/:id/cancel", protect, cancelAdoption);
 
 module.exports = router;

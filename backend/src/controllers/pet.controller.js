@@ -45,6 +45,21 @@ const getPets = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
+    // 修复每个宠物的申请人数
+    for (const pet of pets) {
+      const activeAdoptionsCount = await Adoption.countDocuments({
+        pet: pet._id,
+        status: "active",
+      });
+
+      if (pet.applicants !== activeAdoptionsCount) {
+        await Pet.findByIdAndUpdate(pet._id, {
+          applicants: activeAdoptionsCount,
+        });
+        pet.applicants = activeAdoptionsCount;
+      }
+    }
+
     console.log("成功获取宠物列表，数量:", pets.length);
     res.json(pets);
   } catch (error) {
@@ -221,19 +236,19 @@ const cancelPublication = async (req, res) => {
     }
 
     // 检查是否有进行中的领养申请
-    const activeAdoptions = await Adoption.find({
+    const activeAdoptionsCount = await Adoption.countDocuments({
       pet: petId,
       status: "active",
     });
 
-    if (activeAdoptions.length > 0) {
-      console.log("存在进行中的领养申请:", activeAdoptions.length);
+    if (activeAdoptionsCount > 0) {
+      console.log("存在进行中的领养申请:", activeAdoptionsCount);
       return res.status(400).json({
         message: "该宠物有正在进行的领养申请,无法取消发布",
       });
     }
 
-    // 删除相关的领养申请
+    // 删除所有相关的领养申请（包括已取消和已通过的）
     await Adoption.deleteMany({ pet: petId });
     console.log("已删除相关的领养申请");
 

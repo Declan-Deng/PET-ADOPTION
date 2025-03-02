@@ -9,7 +9,7 @@ export const usePublishForm = (user, addPublication, navigation) => {
   const initialFormData = {
     images: [],
     petName: "",
-    petType: "",
+    type: "cat",
     breed: "",
     customBreed: "",
     otherType: "",
@@ -35,20 +35,22 @@ export const usePublishForm = (user, addPublication, navigation) => {
       errors.petName = "请输入宠物名称";
     }
 
-    if (!formData.petType) {
-      errors.petType = "请选择宠物类型";
+    if (!formData.type) {
+      errors.type = "请选择宠物类型";
     }
 
-    if (formData.petType === "other") {
-      if (!formData.otherType) {
-        errors.otherType = "请选择其他宠物类型";
-      }
+    if (!formData.breed) {
+      errors.breed = "请选择品种";
+    }
+
+    // 检查自定义品种
+    if (
+      (formData.type === "cat" && formData.breed === "其他猫咪") ||
+      (formData.type === "dog" && formData.breed === "其他狗狗") ||
+      (formData.type === "other" && formData.breed === "其他")
+    ) {
       if (!formData.customBreed.trim()) {
-        errors.customBreed = "请输入品种";
-      }
-    } else {
-      if (!formData.breed) {
-        errors.breed = "请选择品种";
+        errors.customBreed = "请输入具体品种";
       }
     }
 
@@ -80,6 +82,7 @@ export const usePublishForm = (user, addPublication, navigation) => {
   };
 
   const updateField = useCallback((field, value) => {
+    console.log("更新表单字段:", field, value);
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -108,12 +111,21 @@ export const usePublishForm = (user, addPublication, navigation) => {
 
       setLoading(true);
 
+      // 确定最终的品种值
+      let finalBreed = formData.breed;
+      if (
+        (formData.type === "cat" && formData.breed === "其他猫咪") ||
+        (formData.type === "dog" && formData.breed === "其他狗狗") ||
+        (formData.type === "other" && formData.breed === "其他")
+      ) {
+        finalBreed = formData.customBreed;
+      }
+
       // 构建发布数据
       const publicationData = {
         petName: formData.petName,
-        type: formData.petType,
-        breed:
-          formData.petType === "other" ? formData.customBreed : formData.breed,
+        type: formData.type,
+        breed: finalBreed,
         age: parseInt(formData.age),
         gender: formData.gender,
         description: formData.description,

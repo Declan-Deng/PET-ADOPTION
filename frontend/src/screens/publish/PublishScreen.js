@@ -45,11 +45,101 @@ const PublishScreen = ({ navigation }) => {
   // 品种选择器状态
   const [showBreedMenu, setShowBreedMenu] = React.useState(false);
   const [showOtherPetTypeMenu, setShowOtherPetTypeMenu] = React.useState(false);
+  const [currentBreeds, setCurrentBreeds] = React.useState([]);
+  const [breedError, setBreedError] = React.useState("");
+  const [isLoadingBreeds, setIsLoadingBreeds] = React.useState(false);
 
   // 动画值
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const translateY = React.useRef(new Animated.Value(50)).current;
   const scaleAnim = React.useRef(new Animated.Value(0.95)).current;
+
+  // 设置初始宠物类型
+  React.useEffect(() => {
+    if (!formData.type) {
+      console.log("设置初始宠物类型为 cat");
+      updateField("type", "cat");
+    }
+  }, []);
+
+  // 每次类型改变时更新品种列表
+  React.useEffect(() => {
+    console.log("宠物类型改变:", formData.type);
+    setBreedError("");
+    setIsLoadingBreeds(true);
+
+    try {
+      if (formData.type === "cat" || formData.type === "dog") {
+        const breeds = breedData[formData.type] || [];
+        console.log("当前品种列表:", breeds);
+        if (breeds.length === 0) {
+          setBreedError("获取品种列表失败");
+        } else {
+          setCurrentBreeds(breeds);
+        }
+      } else if (formData.type === "other") {
+        console.log("其他宠物类型，使用 otherPetTypes");
+        setCurrentBreeds(otherPetTypes);
+      }
+    } catch (error) {
+      console.error("获取品种列表错误:", error);
+      setBreedError("获取品种列表时出错");
+    } finally {
+      setIsLoadingBreeds(false);
+    }
+  }, [formData.type]);
+
+  // 处理品种选择菜单的显示
+  const handleBreedMenuOpen = React.useCallback(() => {
+    console.log("打开品种选择菜单");
+    if (isLoadingBreeds) {
+      console.log("品种列表加载中...");
+      return;
+    }
+    if (breedError) {
+      console.log("品种列表加载失败:", breedError);
+      return;
+    }
+    if (!formData.type) {
+      console.log("未选择宠物类型");
+      setBreedError("请先选择宠物类型");
+      return;
+    }
+    console.log("当前宠物类型:", formData.type);
+    console.log("可用品种列表:", currentBreeds);
+    setShowBreedMenu(true);
+  }, [formData.type, currentBreeds, isLoadingBreeds, breedError]);
+
+  // 处理品种选择
+  const handleBreedSelect = React.useCallback(
+    (breed) => {
+      console.log("选择品种:", breed);
+      updateField("breed", breed);
+      updateField("customBreed", "");
+      setShowBreedMenu(false);
+    },
+    [updateField]
+  );
+
+  // 处理其他宠物类型选择
+  const handleOtherPetTypeSelect = React.useCallback(
+    (type) => {
+      console.log("选择其他宠物类型:", type);
+      updateField("breed", type.label);
+      updateField("customBreed", "");
+      setShowOtherPetTypeMenu(false);
+    },
+    [updateField]
+  );
+
+  // 检查是否需要显示自定义品种输入框
+  const shouldShowCustomBreed = React.useMemo(() => {
+    if (!formData.breed) return false;
+    if (formData.type === "cat" && formData.breed === "其他猫咪") return true;
+    if (formData.type === "dog" && formData.breed === "其他狗狗") return true;
+    if (formData.type === "other" && formData.breed === "其他") return true;
+    return false;
+  }, [formData.type, formData.breed]);
 
   React.useEffect(() => {
     Animated.parallel([
@@ -75,33 +165,6 @@ const PublishScreen = ({ navigation }) => {
     opacity: fadeAnim,
     transform: [{ translateY }, { scale: scaleAnim }],
   };
-
-  // 获取当前宠物类型的品种列表
-  const currentBreedList = React.useMemo(() => {
-    if (formData.petType === "other") return [];
-    return breedData[formData.petType] || [];
-  }, [formData.petType]);
-
-  // 处理其他宠物类型选择
-  const handleOtherPetTypeSelect = React.useCallback(
-    (type) => {
-      updateField("otherType", type.label);
-      setShowOtherPetTypeMenu(false);
-    },
-    [updateField]
-  );
-
-  // 处理品种选择
-  const handleBreedSelect = React.useCallback(
-    (breed) => {
-      updateField("breed", breed.value);
-      setShowBreedMenu(false);
-      if (breed.value.includes("其他")) {
-        updateField("customBreed", "");
-      }
-    },
-    [updateField]
-  );
 
   return (
     <KeyboardAvoidingView
@@ -135,101 +198,73 @@ const PublishScreen = ({ navigation }) => {
               />
 
               <SegmentedButtons
-                value={formData.petType}
+                value={formData.type || "cat"}
                 onValueChange={(value) => {
-                  updateField("petType", value);
+                  console.log("切换宠物类型:", value);
+                  updateField("type", value);
                   updateField("breed", "");
-                  updateField("otherType", "");
-                  updateField("customBreed", "");
+                  setShowBreedMenu(false);
                 }}
+                style={styles.segmentedButtons}
                 buttons={[
-                  { value: "cat", label: "猫" },
-                  { value: "dog", label: "狗" },
+                  { value: "cat", label: "猫咪" },
+                  { value: "dog", label: "狗狗" },
                   { value: "other", label: "其他" },
                 ]}
-                style={styles.segmentedButtons}
               />
 
-              {formData.petType === "other" ? (
-                <>
-                  <Menu
-                    visible={showOtherPetTypeMenu}
-                    onDismiss={() => setShowOtherPetTypeMenu(false)}
-                    anchor={
-                      <TextInput
-                        label="动物类型"
-                        value={formData.otherType}
-                        onPressIn={() => setShowOtherPetTypeMenu(true)}
-                        style={styles.input}
-                        mode="outlined"
-                        right={<TextInput.Icon icon="menu-down" />}
-                        editable={false}
+              <Menu
+                visible={showBreedMenu}
+                onDismiss={() => setShowBreedMenu(false)}
+                anchor={
+                  <TextInput
+                    label="品种"
+                    value={formData.breed}
+                    onFocus={handleBreedMenuOpen}
+                    style={styles.input}
+                    mode="outlined"
+                    editable={true}
+                    error={!!breedError}
+                    right={
+                      <TextInput.Icon
+                        icon={isLoadingBreeds ? "loading" : "menu-down"}
+                        disabled={isLoadingBreeds}
                       />
                     }
-                    style={styles.breedMenu}
-                  >
-                    <ScrollView style={styles.breedMenuScroll}>
-                      {otherPetTypes.map((type) => (
-                        <Menu.Item
-                          key={type.value}
-                          onPress={() => handleOtherPetTypeSelect(type)}
-                          title={type.label}
-                        />
-                      ))}
-                    </ScrollView>
-                  </Menu>
-                  {formData.otherType && (
-                    <TextInput
-                      label="品种"
-                      value={formData.customBreed}
-                      onChangeText={(text) => updateField("customBreed", text)}
-                      style={styles.input}
-                      mode="outlined"
-                      placeholder={`请输入${formData.otherType}的品种`}
-                    />
-                  )}
-                </>
-              ) : (
-                <>
-                  <Menu
-                    visible={showBreedMenu}
-                    onDismiss={() => setShowBreedMenu(false)}
-                    anchor={
-                      <TextInput
-                        label="品种"
-                        value={formData.breed}
-                        onPressIn={() => setShowBreedMenu(true)}
-                        style={styles.input}
-                        mode="outlined"
-                        right={<TextInput.Icon icon="menu-down" />}
-                        editable={false}
+                  />
+                }
+                style={styles.breedMenu}
+              >
+                <ScrollView style={styles.breedMenuScroll}>
+                  {breedError ? (
+                    <Menu.Item title={breedError} disabled />
+                  ) : (
+                    currentBreeds.map((breed) => (
+                      <Menu.Item
+                        key={breed.value}
+                        onPress={() => handleBreedSelect(breed.value)}
+                        title={breed.label}
                       />
-                    }
-                    style={styles.breedMenu}
-                  >
-                    <ScrollView style={styles.breedMenuScroll}>
-                      {currentBreedList.map((item) => (
-                        <Menu.Item
-                          key={item.value}
-                          onPress={() => handleBreedSelect(item)}
-                          title={item.label}
-                        />
-                      ))}
-                    </ScrollView>
-                  </Menu>
-                  {formData.breed?.includes("其他") && (
-                    <TextInput
-                      label="具体品种"
-                      value={formData.customBreed}
-                      onChangeText={(text) => updateField("customBreed", text)}
-                      style={styles.input}
-                      mode="outlined"
-                      placeholder={`请输入具体的${
-                        formData.petType === "cat" ? "猫" : "狗"
-                      }品种`}
-                    />
+                    ))
                   )}
-                </>
+                </ScrollView>
+              </Menu>
+
+              {shouldShowCustomBreed && (
+                <TextInput
+                  label="具体品种"
+                  value={formData.customBreed}
+                  onChangeText={(text) => updateField("customBreed", text)}
+                  style={styles.input}
+                  mode="outlined"
+                  placeholder={`请输入具体的${
+                    formData.type === "cat"
+                      ? "猫"
+                      : formData.type === "dog"
+                      ? "狗"
+                      : "宠物"
+                  }品种`}
+                />
               )}
 
               <TextInput

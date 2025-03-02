@@ -39,12 +39,12 @@ export const breedData = {
 };
 
 export const otherPetTypes = [
-  { label: "鸟类", value: "bird" },
-  { label: "鱼类", value: "fish" },
-  { label: "仓鼠", value: "hamster" },
-  { label: "兔子", value: "rabbit" },
-  { label: "龟类", value: "turtle" },
-  { label: "蜥蜴", value: "lizard" },
-  { label: "蛇类", value: "snake" },
-  { label: "其他", value: "other" },
+  { label: "鸟类", value: "鸟类" },
+  { label: "鱼类", value: "鱼类" },
+  { label: "仓鼠", value: "仓鼠" },
+  { label: "兔子", value: "兔子" },
+  { label: "龟类", value: "龟类" },
+  { label: "蜥蜴", value: "蜥蜴" },
+  { label: "蛇类", value: "蛇类" },
+  { label: "其他", value: "其他" },
 ];

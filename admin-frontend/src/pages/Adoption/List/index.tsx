@@ -1,9 +1,4 @@
-import {
-  Adoption,
-  approveAdoption,
-  deleteAdoption,
-  getAllAdoptions,
-} from '@/services/adoption';
+import { Adoption, deleteAdoption, getAllAdoptions } from '@/services/adoption';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import {
@@ -18,23 +13,6 @@ const { confirm } = Modal;
 
 const AdoptionList = () => {
   const actionRef = useRef<ActionType>();
-
-  const handleApprove = async (id: string) => {
-    confirm({
-      title: '确认通过',
-      icon: <ExclamationCircleOutlined />,
-      content: '确定要通过这个领养申请吗？',
-      onOk: async () => {
-        try {
-          await approveAdoption(id);
-          message.success('已通过申请');
-          actionRef.current?.reload();
-        } catch (error) {
-          message.error('操作失败');
-        }
-      },
-    });
-  };
 
   const handleDelete = async (id: string) => {
     confirm({
@@ -147,15 +125,6 @@ const AdoptionList = () => {
       title: '操作',
       valueType: 'option',
       render: (_, record) => [
-        record.status === 'active' && (
-          <Button
-            key="approve"
-            type="link"
-            onClick={() => handleApprove(record._id)}
-          >
-            通过
-          </Button>
-        ),
         <Button
           key="delete"
           type="link"

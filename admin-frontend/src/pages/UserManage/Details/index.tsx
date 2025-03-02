@@ -128,15 +128,15 @@ const UserDetails = () => {
                   <>
                     <Tag
                       color={
-                        adoption.status === 'pending'
+                        adoption.status === 'active'
                           ? 'orange'
                           : adoption.status === 'approved'
                           ? 'green'
                           : 'red'
                       }
                     >
-                      {adoption.status === 'pending'
-                        ? '审核中'
+                      {adoption.status === 'active'
+                        ? '处理中'
                         : adoption.status === 'approved'
                         ? '已通过'
                         : '已拒绝'}

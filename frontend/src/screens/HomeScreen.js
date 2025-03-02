@@ -192,7 +192,9 @@ const HomeScreen = ({ navigation, route }) => {
             </Title>
             <View style={styles.cardInfo}>
               <Text style={styles.cardInfoText}>{pet.breed}</Text>
-              <Text style={styles.cardInfoText}>{pet.age}</Text>
+              <Text style={styles.cardInfoText}>
+                {pet.age ? `${pet.age}岁` : "年龄未知"}
+              </Text>
             </View>
             <Paragraph numberOfLines={2} style={styles.cardDescription}>
               {pet.description}
