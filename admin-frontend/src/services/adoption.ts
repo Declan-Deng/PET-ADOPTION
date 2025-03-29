@@ -15,7 +15,7 @@ export interface Adoption {
       phone: string;
     };
   };
-  status: 'active' | 'approved' | 'cancelled';
+  status: 'active' | 'approved' | 'rejected' | 'cancelled';
   reason: string;
   experience: string;
   livingCondition: string;
@@ -49,8 +49,11 @@ export async function approveAdoption(id: string) {
 }
 
 export async function rejectAdoption(id: string) {
-  return request<void>(`/api/adoptions/${id}/reject`, {
-    method: 'POST',
+  return request<{
+    message: string;
+    data: Adoption;
+  }>(`/api/adoptions/${id}/reject`, {
+    method: 'PUT',
   });
 }
 

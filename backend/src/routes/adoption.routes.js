@@ -8,6 +8,7 @@ const {
   getAdoptionById,
   cancelAdoption,
   approveAdoption,
+  rejectAdoption,
   getAllAdoptions,
   deleteAdoption,
 } = require("../controllers/adoption.controller");
@@ -18,6 +19,7 @@ router.delete("/:id", protect, adminAuth, deleteAdoption);
 
 // 普通用户路由
 router.put("/:id/approve", protect, approveAdoption);
+router.put("/:id/reject", protect, rejectAdoption);
 router.post("/", protect, createAdoption);
 router.get("/", protect, getUserAdoptions);
 router.get("/pet/:petId", protect, getPetAdoptions);

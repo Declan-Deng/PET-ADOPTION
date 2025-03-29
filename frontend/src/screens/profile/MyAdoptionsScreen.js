@@ -128,6 +128,8 @@ const MyAdoptionsScreen = ({ navigation }) => {
         return { bg: "#E8F5E9", text: "#2E7D32" };
       case "approved":
         return { bg: "#E3F2FD", text: "#1565C0" };
+      case "rejected":
+        return { bg: "#FFEBEE", text: "#C62828" };
       case "cancelled":
         return { bg: "#FFEBEE", text: "#C62828" };
       default:
@@ -142,6 +144,8 @@ const MyAdoptionsScreen = ({ navigation }) => {
         return "申请中";
       case "approved":
         return "已通过";
+      case "rejected":
+        return "已拒绝";
       case "cancelled":
         return "已取消";
       default:

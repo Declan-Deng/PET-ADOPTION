@@ -280,6 +280,52 @@ const approveAdoption = async (req, res) => {
   }
 };
 
+// 拒绝领养申请
+const rejectAdoption = async (req, res) => {
+  try {
+    console.log("开始处理拒绝申请请求...");
+    const adoptionId = req.params.id;
+
+    // 查找申请记录
+    const adoption = await Adoption.findById(adoptionId)
+      .populate("pet")
+      .populate("applicant");
+
+    if (!adoption) {
+      return res.status(404).json({ message: "申请不存在" });
+    }
+
+    // 检查权限（只有宠物主人可以拒绝申请）
+    if (req.user._id.toString() !== adoption.pet.owner.toString()) {
+      return res.status(403).json({ message: "没有权限拒绝此申请" });
+    }
+
+    // 检查状态
+    if (adoption.status !== "active") {
+      return res.status(400).json({ message: "该申请已不能被拒绝" });
+    }
+
+    // 更新申请状态为已拒绝
+    adoption.status = "rejected";
+    await adoption.save();
+
+    // 减少宠物的申请人数
+    await Pet.findByIdAndUpdate(adoption.pet._id, {
+      $inc: { applicants: -1 },
+    });
+
+    res.json({
+      message: "申请已拒绝",
+      data: adoption,
+    });
+  } catch (error) {
+    console.error("拒绝申请失败:", error);
+    res.status(500).json({
+      message: error.message || "拒绝申请失败",
+    });
+  }
+};
+
 // 获取所有领养申请（管理员）
 const getAllAdoptions = async (req, res) => {
   try {
@@ -419,5 +465,6 @@ module.exports = {
   deleteAdoption,
   cancelAdoption,
   approveAdoption,
+  rejectAdoption,
   getAllAdoptions,
 };

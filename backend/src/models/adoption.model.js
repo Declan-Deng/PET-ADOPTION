@@ -26,7 +26,7 @@ const adoptionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["active", "approved", "cancelled"],
+      enum: ["active", "approved", "rejected", "cancelled"],
       default: "active",
     },
     createdAt: {

@@ -1,0 +1,113 @@
+@startuml
+title Pet Adoption System - Class Diagram
+
+' 后端模型
+package "Backend Models" {
+  class User {
+    +username: String
+    +email: String
+    +password: String
+    +phone: String
+    +role: String
+    +status: String
+    +profile: Object
+    +favorites: Pet[]
+    +publications: Pet[]
+    +adoptions: Adoption[]
+    +notifications: Notification[]
+    +comparePassword(password: String): Boolean
+  }
+
+  class Pet {
+    +petName: String
+    +type: String
+    +breed: String
+    +age: Number
+    +gender: String
+    +description: String
+    +requirements: String
+    +images: String[]
+    +medical: Object
+    +owner: User
+    +status: String
+    +applicants: Number
+  }
+
+  class Adoption {
+    +pet: Pet
+    +applicant: User
+    +reason: String
+    +experience: String
+    +livingCondition: String
+    +status: String
+  }
+
+  class Notification {
+    +type: String
+    +title: String
+    +message: String
+    +read: Boolean
+    +createdAt: Date
+  }
+}
+
+' 前端组件
+package "Frontend Components" {
+  class PetCard {
+    +pet: Object
+    +onPress: Function
+    -imageLoading: Boolean
+    -handleLoadStart(): void
+    -handleLoadEnd(): void
+    -renderGenderIcon(): Component
+  }
+
+  class ImageCarousel {
+    +images: String[]
+    +onImagePress: Function
+    -scrollX: Animated.Value
+    -currentIndex: Number
+    -handleScroll(): void
+    -handleImageLoadStart(): void
+    -handleImageLoadEnd(): void
+    -handleImageError(): void
+    -scrollToImage(): void
+  }
+
+  class ImagePickerSection {
+    +images: String[]
+    +onImagesChange: Function
+    -uploadStatus: Object
+    -uploadProgress: Object
+    -uploadImage(): Promise
+    -pickImage(): void
+    -takePhoto(): void
+    -removeImage(): void
+  }
+
+  class SearchBar {
+    +onSearch: Function
+    +value: String
+    -searchQuery: String
+    -handleSearch(): void
+  }
+
+  class SplashScreen {
+    +onFinish: Function
+    -logoScale: Animated.Value
+    -logoOpacity: Animated.Value
+    -textOpacity: Animated.Value
+  }
+}
+
+' 关系
+User "1" -- "*" Pet : owns
+User "1" -- "*" Adoption : requests
+Pet "1" -- "*" Adoption : has
+User "1" -- "*" Notification : receives
+PetCard ..> Pet : displays
+ImageCarousel ..> Pet : displays images
+ImagePickerSection ..> Pet : manages images
+SearchBar ..> Pet : searches
+
+@enduml 

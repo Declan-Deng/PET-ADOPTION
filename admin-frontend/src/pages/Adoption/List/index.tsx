@@ -1,4 +1,10 @@
-import { Adoption, deleteAdoption, getAllAdoptions } from '@/services/adoption';
+import {
+  Adoption,
+  approveAdoption,
+  deleteAdoption,
+  getAllAdoptions,
+  rejectAdoption,
+} from '@/services/adoption';
 import { ExclamationCircleOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import {
@@ -26,6 +32,42 @@ const AdoptionList = () => {
           actionRef.current?.reload();
         } catch (error) {
           message.error('删除失败');
+        }
+      },
+    });
+  };
+
+  const handleApprove = async (id: string) => {
+    confirm({
+      title: '确认通过',
+      icon: <ExclamationCircleOutlined />,
+      content: '通过后该宠物将标记为已被领养，确定要通过吗？',
+      onOk: async () => {
+        try {
+          await approveAdoption(id);
+          message.success('申请已通过');
+          actionRef.current?.reload();
+        } catch (error) {
+          console.error('通过申请失败:', error);
+          message.error('通过申请失败');
+        }
+      },
+    });
+  };
+
+  const handleReject = async (id: string) => {
+    confirm({
+      title: '确认拒绝',
+      icon: <ExclamationCircleOutlined />,
+      content: '确定要拒绝该领养申请吗？',
+      onOk: async () => {
+        try {
+          await rejectAdoption(id);
+          message.success('申请已拒绝');
+          actionRef.current?.reload();
+        } catch (error) {
+          console.error('拒绝申请失败:', error);
+          message.error('拒绝申请失败');
         }
       },
     });
@@ -118,6 +160,7 @@ const AdoptionList = () => {
       valueEnum: {
         active: { text: '待处理', status: 'Processing' },
         approved: { text: '已通过', status: 'Success' },
+        rejected: { text: '已拒绝', status: 'Error' },
         cancelled: { text: '已取消', status: 'Default' },
       },
     },
@@ -133,6 +176,26 @@ const AdoptionList = () => {
         >
           删除
         </Button>,
+        record.status === 'active' && (
+          <>
+            <Button
+              key="approve"
+              type="link"
+              style={{ color: 'green' }}
+              onClick={() => handleApprove(record._id)}
+            >
+              通过
+            </Button>
+            <Button
+              key="reject"
+              type="link"
+              danger
+              onClick={() => handleReject(record._id)}
+            >
+              拒绝
+            </Button>
+          </>
+        ),
       ],
     },
   ];

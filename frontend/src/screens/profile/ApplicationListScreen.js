@@ -27,8 +27,10 @@ const ApplicationListScreen = ({ route, navigation }) => {
   const [loading, setLoading] = React.useState(true);
   const [refreshing, setRefreshing] = React.useState(false);
   const [approving, setApproving] = React.useState(false);
+  const [rejecting, setRejecting] = React.useState(false);
   const [selectedApplication, setSelectedApplication] = React.useState(null);
   const [showConfirmDialog, setShowConfirmDialog] = React.useState(false);
+  const [showRejectDialog, setShowRejectDialog] = React.useState(false);
 
   const fetchApplications = React.useCallback(async () => {
     try {
@@ -72,6 +74,8 @@ const ApplicationListScreen = ({ route, navigation }) => {
         return { bg: "#E8F5E9", text: "#2E7D32" };
       case "approved":
         return { bg: "#E3F2FD", text: "#1565C0" };
+      case "rejected":
+        return { bg: "#FFEBEE", text: "#C62828" };
       case "cancelled":
         return { bg: "#FFEBEE", text: "#C62828" };
       default:
@@ -85,6 +89,8 @@ const ApplicationListScreen = ({ route, navigation }) => {
         return "申请中";
       case "approved":
         return "已通过";
+      case "rejected":
+        return "已拒绝";
       case "cancelled":
         return "已取消";
       default:
@@ -130,6 +136,44 @@ const ApplicationListScreen = ({ route, navigation }) => {
     }
   };
 
+  const handleReject = async () => {
+    try {
+      setRejecting(true);
+      const token = await AsyncStorage.getItem("userToken");
+      if (!token) {
+        throw new Error("登录已过期");
+      }
+
+      const response = await fetch(
+        API_ENDPOINTS.REJECT_ADOPTION(selectedApplication._id),
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("拒绝申请失败");
+      }
+
+      // 刷新申请列表
+      await fetchApplications();
+      setShowRejectDialog(false);
+      setSelectedApplication(null);
+
+      // 显示成功提示
+      Alert.alert("成功", "已拒绝该申请");
+    } catch (error) {
+      console.error("拒绝申请失败:", error);
+      Alert.alert("错误", error.message || "拒绝申请失败，请重试");
+    } finally {
+      setRejecting(false);
+    }
+  };
+
   const renderItem = ({ item }) => (
     <Surface style={styles.itemContainer} elevation={1}>
       <List.Item
@@ -172,16 +216,29 @@ const ApplicationListScreen = ({ route, navigation }) => {
         <Text style={styles.content}>{item.livingCondition}</Text>
 
         {item.status === "active" && (
-          <Button
-            mode="contained"
-            onPress={() => {
-              setSelectedApplication(item);
-              setShowConfirmDialog(true);
-            }}
-            style={styles.approveButton}
-          >
-            通过申请
-          </Button>
+          <View style={styles.buttonContainer}>
+            <Button
+              mode="contained"
+              onPress={() => {
+                setSelectedApplication(item);
+                setShowConfirmDialog(true);
+              }}
+              style={styles.approveButton}
+            >
+              通过申请
+            </Button>
+            <Button
+              mode="outlined"
+              onPress={() => {
+                setSelectedApplication(item);
+                setShowRejectDialog(true);
+              }}
+              style={styles.rejectButton}
+              color="#C62828"
+            >
+              拒绝申请
+            </Button>
+          </View>
         )}
       </View>
     </Surface>
@@ -232,6 +289,32 @@ const ApplicationListScreen = ({ route, navigation }) => {
               onPress={handleApprove}
               loading={approving}
               disabled={approving}
+            >
+              确定
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+
+        <Dialog
+          visible={showRejectDialog}
+          onDismiss={() => setShowRejectDialog(false)}
+        >
+          <Dialog.Title>确认拒绝申请</Dialog.Title>
+          <Dialog.Content>
+            <Text>
+              确定要拒绝{" "}
+              {selectedApplication?.applicant?.profile?.name || "该用户"}{" "}
+              的申请吗？
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setShowRejectDialog(false)}>取消</Button>
+            <Button
+              mode="contained"
+              onPress={handleReject}
+              loading={rejecting}
+              disabled={rejecting}
+              color="#C62828"
             >
               确定
             </Button>
@@ -299,8 +382,18 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#666",
   },
-  approveButton: {
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 16,
+  },
+  approveButton: {
+    flex: 1,
+    marginRight: 8,
+  },
+  rejectButton: {
+    flex: 1,
+    marginLeft: 8,
   },
 });
 
