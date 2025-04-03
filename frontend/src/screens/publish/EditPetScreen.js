@@ -2,54 +2,49 @@ import * as React from "react";
 import {
   View,
   StyleSheet,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
+  Alert,
   Animated,
   Dimensions,
 } from "react-native";
 import {
   TextInput,
   Button,
-  Text,
-  Surface,
   SegmentedButtons,
+  Switch,
+  Surface,
+  Text,
+  ActivityIndicator,
   Portal,
   Dialog,
+  HelperText,
   Divider,
-  Switch,
+  Appbar,
   RadioButton,
   useTheme,
   Menu,
 } from "react-native-paper";
 import { UserContext } from "../../context/UserContext";
-import { usePublishForm } from "../../hooks/usePublishForm";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import ImagePickerSection from "./ImagePickerSection";
+import { usePublishForm } from "../../hooks/usePublishForm";
 import { breedData, otherPetTypes } from "../../constants/breedData";
+import { API_ENDPOINTS } from "../../config";
 
 const { width } = Dimensions.get("window");
 
-const PublishScreen = ({ navigation }) => {
+const EditPetScreen = ({ navigation, route }) => {
+  const { petId } = route.params || {};
   const theme = useTheme();
-  const { addPublication, user } = React.useContext(UserContext);
+  const { user } = React.useContext(UserContext);
+  const [initialLoading, setInitialLoading] = React.useState(true);
+  const [petData, setPetData] = React.useState(null);
+  const [error, setError] = React.useState("");
 
-  // 实现提交函数
-  const handleAddPublication = async (petData) => {
-    await addPublication(petData);
-
-    // 发布成功后导航到成功页面
-    navigation.navigate("PublishSuccess");
-  };
-
-  const {
-    formData,
-    loading,
-    showDialog,
-    setShowDialog,
-    updateField,
-    handleSubmit,
-    setLoading,
-  } = usePublishForm(user, handleAddPublication, navigation);
+  // 在加载宠物详情后初始化表单
+  const [initialFormData, setInitialFormData] = React.useState(null);
 
   // 品种选择器状态
   const [showBreedMenu, setShowBreedMenu] = React.useState(false);
@@ -63,16 +58,158 @@ const PublishScreen = ({ navigation }) => {
   const translateY = React.useRef(new Animated.Value(50)).current;
   const scaleAnim = React.useRef(new Animated.Value(0.95)).current;
 
-  // 设置初始宠物类型
+  // 首先获取宠物详情
   React.useEffect(() => {
-    if (!formData.type) {
-      console.log("设置初始宠物类型为 cat");
-      updateField("type", "cat");
+    const fetchPetDetails = async () => {
+      if (!petId) {
+        setError("缺少宠物ID");
+        setInitialLoading(false);
+        return;
+      }
+
+      try {
+        const token = await AsyncStorage.getItem("userToken");
+        if (!token) {
+          throw new Error("登录已过期，请重新登录");
+        }
+
+        const response = await fetch(API_ENDPOINTS.PET_DETAIL(petId), {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`获取宠物详情失败: ${response.status}`);
+        }
+
+        const responseJson = await response.json();
+        console.log("API响应:", responseJson);
+
+        if (!responseJson.data) {
+          throw new Error("服务器返回数据结构异常");
+        }
+
+        const data = responseJson.data;
+        if (!data || !data.petName) {
+          throw new Error("获取的宠物数据不完整");
+        }
+
+        setPetData(data);
+
+        // 处理特殊品种（如果不在预设列表中）
+        let finalBreed = data.breed;
+        let customBreed = "";
+
+        if (data.type === "cat") {
+          const catBreedValues = breedData.cat.map((item) => item.value);
+          if (!catBreedValues.includes(data.breed)) {
+            finalBreed = "其他猫咪";
+            customBreed = data.breed;
+          }
+        } else if (data.type === "dog") {
+          const dogBreedValues = breedData.dog.map((item) => item.value);
+          if (!dogBreedValues.includes(data.breed)) {
+            finalBreed = "其他狗狗";
+            customBreed = data.breed;
+          }
+        } else if (data.type === "other") {
+          const otherTypeValues = otherPetTypes.map((item) => item.value);
+          if (!otherTypeValues.includes(data.breed)) {
+            finalBreed = "其他";
+            customBreed = data.breed;
+          }
+        }
+
+        // 设置初始表单数据
+        const formInitData = {
+          images: data.images || [],
+          petName: data.petName || "",
+          type: data.type || "cat",
+          breed: finalBreed,
+          customBreed: customBreed,
+          otherType: data.type === "other" ? data.breed : "",
+          age: data.age ? data.age.toString() : "",
+          gender: data.gender || "",
+          description: data.description || "",
+          requirements: data.requirements || "",
+          vaccinated: data.medical?.vaccinated || false,
+          sterilized: data.medical?.sterilized || false,
+          healthStatus: data.medical?.healthStatus || "健康",
+        };
+
+        setInitialFormData(formInitData);
+      } catch (error) {
+        console.error("获取宠物详情失败:", error);
+        setError(error.message || "获取宠物详情失败");
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    fetchPetDetails();
+  }, [petId]);
+
+  // 使用usePublishForm钩子，传入编辑模式参数
+  const handleUpdatePet = async (petData) => {
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      if (!token) {
+        throw new Error("登录已过期，请重新登录");
+      }
+
+      const response = await fetch(API_ENDPOINTS.PET_DETAIL(petId), {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(petData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "更新失败");
+      }
+
+      const result = await response.json();
+      console.log("更新结果:", result);
+
+      Alert.alert("成功", "宠物信息已更新", [
+        {
+          text: "确定",
+          onPress: () => {
+            // 返回上一页并传递刷新标记
+            navigation.navigate("MyPublications", { refresh: true });
+          },
+        },
+      ]);
+    } catch (error) {
+      console.error("更新失败:", error);
+      throw error;
     }
-  }, []);
+  };
+
+  const {
+    formData,
+    loading,
+    showDialog,
+    setShowDialog,
+    updateField,
+    handleSubmit,
+    setLoading,
+    formErrors,
+  } = usePublishForm(
+    user,
+    handleUpdatePet,
+    navigation,
+    initialFormData // 传入初始表单数据
+  );
 
   // 每次类型改变时更新品种列表
   React.useEffect(() => {
+    if (!formData.type) return;
+
     console.log("宠物类型改变:", formData.type);
     setBreedError("");
     setIsLoadingBreeds(true);
@@ -134,7 +271,7 @@ const PublishScreen = ({ navigation }) => {
   const handleOtherPetTypeSelect = React.useCallback(
     (type) => {
       console.log("选择其他宠物类型:", type);
-      updateField("breed", type.label);
+      updateField("breed", type.value);
       updateField("customBreed", "");
       setShowOtherPetTypeMenu(false);
     },
@@ -175,21 +312,42 @@ const PublishScreen = ({ navigation }) => {
     transform: [{ translateY }, { scale: scaleAnim }],
   };
 
+  if (initialLoading) {
+    return (
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={styles.loadingText}>加载宠物信息...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centerContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <Button mode="contained" onPress={() => navigation.goBack()}>
+          返回
+        </Button>
+      </View>
+    );
+  }
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
+      <Appbar.Header>
+        <Appbar.BackAction onPress={() => navigation.goBack()} />
+        <Appbar.Content title="编辑宠物信息" />
+      </Appbar.Header>
+
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View style={[styles.content, animatedStyle]}>
           <Surface style={styles.surface} elevation={2}>
-            <Text variant="titleLarge" style={styles.title}>
-              发布宠物信息
-            </Text>
-
             <ImagePickerSection
               images={formData.images}
               setImages={(images) => updateField("images", images)}
@@ -204,6 +362,7 @@ const PublishScreen = ({ navigation }) => {
                 onChangeText={(text) => updateField("petName", text)}
                 style={styles.input}
                 mode="outlined"
+                error={formErrors.petName}
               />
 
               <SegmentedButtons
@@ -233,7 +392,7 @@ const PublishScreen = ({ navigation }) => {
                     style={styles.input}
                     mode="outlined"
                     editable={true}
-                    error={!!breedError}
+                    error={!!breedError || formErrors.breed}
                     right={
                       <TextInput.Icon
                         icon={isLoadingBreeds ? "loading" : "menu-down"}
@@ -266,13 +425,7 @@ const PublishScreen = ({ navigation }) => {
                   onChangeText={(text) => updateField("customBreed", text)}
                   style={styles.input}
                   mode="outlined"
-                  placeholder={`请输入具体的${
-                    formData.type === "cat"
-                      ? "猫"
-                      : formData.type === "dog"
-                      ? "狗"
-                      : "宠物"
-                  }品种`}
+                  error={formErrors.customBreed}
                 />
               )}
 
@@ -283,6 +436,7 @@ const PublishScreen = ({ navigation }) => {
                 keyboardType="numeric"
                 style={styles.input}
                 mode="outlined"
+                error={formErrors.age}
               />
 
               <SegmentedButtons
@@ -291,8 +445,10 @@ const PublishScreen = ({ navigation }) => {
                 buttons={[
                   { value: "male", label: "公" },
                   { value: "female", label: "母" },
+                  { value: "unknown", label: "未知" },
                 ]}
                 style={styles.segmentedButtons}
+                error={formErrors.gender}
               />
 
               <TextInput
@@ -303,6 +459,7 @@ const PublishScreen = ({ navigation }) => {
                 numberOfLines={4}
                 style={styles.input}
                 mode="outlined"
+                error={formErrors.description}
               />
 
               <TextInput
@@ -313,47 +470,62 @@ const PublishScreen = ({ navigation }) => {
                 numberOfLines={4}
                 style={styles.input}
                 mode="outlined"
+                error={formErrors.requirements}
               />
 
-              <View style={styles.medicalSection}>
-                <Text variant="titleMedium" style={styles.sectionTitle}>
-                  医疗信息
-                </Text>
-                <View style={styles.switchRow}>
-                  <Text>已接种疫苗</Text>
-                  <Switch
-                    value={formData.vaccinated}
-                    onValueChange={(value) => updateField("vaccinated", value)}
-                  />
-                </View>
-                <View style={styles.switchRow}>
-                  <Text>已绝育</Text>
-                  <Switch
-                    value={formData.sterilized}
-                    onValueChange={(value) => updateField("sterilized", value)}
-                  />
-                </View>
-                <RadioButton.Group
-                  onValueChange={(value) => updateField("healthStatus", value)}
-                  value={formData.healthStatus}
-                >
-                  <View style={styles.radioGroup}>
-                    <RadioButton.Item label="健康" value="健康" />
-                    <RadioButton.Item label="亚健康" value="亚健康" />
-                    <RadioButton.Item label="需要治疗" value="需要治疗" />
-                  </View>
-                </RadioButton.Group>
-              </View>
-            </View>
+              <Divider style={styles.divider} />
 
-            <Button
-              mode="contained"
-              onPress={handleSubmit}
-              loading={loading}
-              style={styles.submitButton}
-            >
-              发布
-            </Button>
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                健康信息
+              </Text>
+
+              <View style={styles.switchRow}>
+                <Text>已接种疫苗</Text>
+                <Switch
+                  value={formData.vaccinated}
+                  onValueChange={(value) => updateField("vaccinated", value)}
+                />
+              </View>
+
+              <View style={styles.switchRow}>
+                <Text>已绝育</Text>
+                <Switch
+                  value={formData.sterilized}
+                  onValueChange={(value) => updateField("sterilized", value)}
+                />
+              </View>
+
+              <RadioButton.Group
+                onValueChange={(value) => updateField("healthStatus", value)}
+                value={formData.healthStatus}
+              >
+                <Text style={styles.radioLabel}>健康状况</Text>
+                <View style={styles.radioGroup}>
+                  <View style={styles.radioItem}>
+                    <RadioButton value="健康" />
+                    <Text>健康</Text>
+                  </View>
+                  <View style={styles.radioItem}>
+                    <RadioButton value="亚健康" />
+                    <Text>亚健康</Text>
+                  </View>
+                  <View style={styles.radioItem}>
+                    <RadioButton value="需要治疗" />
+                    <Text>需要治疗</Text>
+                  </View>
+                </View>
+              </RadioButton.Group>
+
+              <Button
+                mode="contained"
+                onPress={handleSubmit}
+                style={styles.submitButton}
+                disabled={loading}
+                loading={loading}
+              >
+                保存修改
+              </Button>
+            </View>
           </Surface>
         </Animated.View>
       </ScrollView>
@@ -378,55 +550,80 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f5f5f5",
   },
+  centerContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+  },
+  errorText: {
+    color: "red",
+    marginBottom: 16,
+    textAlign: "center",
+  },
   scrollContent: {
     flexGrow: 1,
     padding: 16,
   },
   content: {
-    flex: 1,
+    width: "100%",
   },
   surface: {
     padding: 16,
     borderRadius: 8,
   },
   title: {
+    marginBottom: 16,
     textAlign: "center",
-    marginBottom: 24,
   },
   formSection: {
-    gap: 16,
+    marginTop: 16,
   },
   input: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   segmentedButtons: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  medicalSection: {
-    marginTop: 24,
-    gap: 12,
+  divider: {
+    marginVertical: 16,
   },
   sectionTitle: {
-    marginBottom: 8,
+    marginBottom: 16,
   },
   switchRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 8,
+    marginBottom: 16,
+  },
+  radioLabel: {
+    marginBottom: 8,
   },
   radioGroup: {
-    marginTop: 8,
+    flexDirection: "row",
+    marginBottom: 16,
+  },
+  radioItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 16,
   },
   submitButton: {
-    marginTop: 24,
+    marginTop: 16,
+    marginBottom: 8,
   },
   breedMenu: {
-    maxWidth: width - 32,
+    width: width - 64,
+    maxHeight: 300,
   },
   breedMenuScroll: {
-    maxHeight: 300,
+    maxHeight: 250,
   },
 });
 
-export default PublishScreen;
+export default EditPetScreen;

@@ -7,6 +7,7 @@ import MyAdoptionsScreen from "../screens/profile/MyAdoptionsScreen";
 import AboutScreen from "../screens/profile/AboutScreen";
 import PetDetailScreen from "../screens/PetDetailScreen";
 import ApplicationListScreen from "../screens/profile/ApplicationListScreen";
+import EditPetScreen from "../screens/publish/EditPetScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -47,6 +48,11 @@ const ProfileStack = () => {
         name="ApplicationList"
         component={ApplicationListScreen}
         options={{ title: "申请列表" }}
+      />
+      <Stack.Screen
+        name="EditPet"
+        component={EditPetScreen}
+        options={{ title: "编辑宠物", headerShown: false }}
       />
     </Stack.Navigator>
   );

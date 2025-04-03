@@ -1,7 +1,12 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Alert } from "react-native";
 
-export const usePublishForm = (user, addPublication, navigation) => {
+export const usePublishForm = (
+  user,
+  submitFunction,
+  navigation,
+  initialData = null
+) => {
   const [loading, setLoading] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
   const [formErrors, setFormErrors] = useState({});
@@ -22,7 +27,15 @@ export const usePublishForm = (user, addPublication, navigation) => {
     healthStatus: "健康",
   };
 
-  const [formData, setFormData] = useState(initialFormData);
+  const [formData, setFormData] = useState(initialData || initialFormData);
+
+  // 当初始数据加载完成后更新表单
+  useEffect(() => {
+    if (initialData) {
+      console.log("初始化表单数据:", initialData);
+      setFormData(initialData);
+    }
+  }, [initialData]);
 
   const validateForm = () => {
     const errors = {};
@@ -121,8 +134,8 @@ export const usePublishForm = (user, addPublication, navigation) => {
         finalBreed = formData.customBreed;
       }
 
-      // 构建发布数据
-      const publicationData = {
+      // 构建发布/更新数据
+      const petData = {
         petName: formData.petName,
         type: formData.type,
         breed: finalBreed,
@@ -138,31 +151,18 @@ export const usePublishForm = (user, addPublication, navigation) => {
         },
       };
 
-      // 发布宠物信息
-      await addPublication(publicationData);
+      // 提交表单数据（发布或更新）
+      await submitFunction(petData);
 
-      // 重置表单数据
-      resetForm();
+      // 如果是发布模式，重置表单数据
+      if (!initialData) {
+        resetForm();
+      }
 
-      // 修改导航逻辑，确保跳转到"我的发布"页面
-      navigation.reset({
-        index: 0,
-        routes: [
-          {
-            name: "Main",
-            params: {
-              screen: "ProfileTab",
-              params: {
-                screen: "MyPublications",
-                params: { refresh: true },
-              },
-            },
-          },
-        ],
-      });
+      // 导航逻辑由调用者处理
     } catch (error) {
-      console.error("发布失败:", error);
-      Alert.alert("发布失败", error.message || "请稍后重试");
+      console.error("操作失败:", error);
+      Alert.alert("操作失败", error.message || "请稍后重试");
     } finally {
       setLoading(false);
     }

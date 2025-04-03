@@ -187,17 +187,33 @@ const MyPublicationsScreen = ({ navigation, route }) => {
             >
               {item.applicants || 0} 人申请
             </Chip>
-            <Button
-              mode="text"
-              textColor="red"
-              onPress={() => {
-                setSelectedPet(item);
-                setShowConfirmDialog(true);
-              }}
-              disabled={item.applicants > 0}
-            >
-              取消发布
-            </Button>
+            <View style={styles.buttonGroup}>
+              <Button
+                mode="text"
+                onPress={() => {
+                  navigation.navigate("EditPet", {
+                    petId: item._id,
+                  });
+                }}
+                icon="pencil"
+                style={styles.editButton}
+                disabled={item.applicants > 0}
+              >
+                编辑
+              </Button>
+              <Button
+                mode="text"
+                textColor="red"
+                onPress={() => {
+                  setSelectedPet(item);
+                  setShowConfirmDialog(true);
+                }}
+                icon="delete"
+                disabled={item.applicants > 0}
+              >
+                取消
+              </Button>
+            </View>
           </View>
         )}
         onPress={() =>
@@ -357,6 +373,13 @@ const styles = StyleSheet.create({
   },
   disabledChip: {
     opacity: 0.5,
+  },
+  buttonGroup: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+  editButton: {
+    marginRight: 8,
   },
 });
 
