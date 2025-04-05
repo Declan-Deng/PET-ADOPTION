@@ -19,7 +19,7 @@ export const API_ENDPOINTS = {
   PET_ADOPTIONS: (petId) => `${API_BASE_URL}/api/adoptions/pet/${petId}`,
   APPROVE_ADOPTION: (id) => `${API_BASE_URL}/api/adoptions/${id}/approve`,
   REJECT_ADOPTION: (id) => `${API_BASE_URL}/api/adoptions/${id}/reject`,
-  CANCEL_ADOPTION: (id) => `${API_BASE_URL}/api/adoptions/${id}`,
+  CANCEL_ADOPTION: (id) => `${API_BASE_URL}/api/adoptions/${id}/cancel`,
 
   // 上传相关
   UPLOAD_IMAGE: `${API_BASE_URL}/api/upload/image`,

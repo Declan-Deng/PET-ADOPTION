@@ -12,7 +12,7 @@ import {
   PageContainer,
   ProTable,
 } from '@ant-design/pro-components';
-import { Button, message, Modal } from 'antd';
+import { Button, message, Modal, Row, Space } from 'antd';
 import { useRef } from 'react';
 
 const { confirm } = Modal;
@@ -167,36 +167,46 @@ const AdoptionList = () => {
     {
       title: '操作',
       valueType: 'option',
-      render: (_, record) => [
-        <Button
-          key="delete"
-          type="link"
-          danger
-          onClick={() => handleDelete(record._id)}
-        >
-          删除
-        </Button>,
-        record.status === 'active' && (
-          <>
+      width: 120,
+      render: (_, record) => {
+        return (
+          <Space direction="vertical" size="small" style={{ width: '100%' }}>
             <Button
-              key="approve"
-              type="link"
-              style={{ color: 'green' }}
-              onClick={() => handleApprove(record._id)}
-            >
-              通过
-            </Button>
-            <Button
-              key="reject"
+              key="delete"
               type="link"
               danger
-              onClick={() => handleReject(record._id)}
+              onClick={() => handleDelete(record._id)}
+              style={{ padding: '4px 0', height: 'auto' }}
             >
-              拒绝
+              删除
             </Button>
-          </>
-        ),
-      ],
+
+            {record.status === 'active' && (
+              <Row>
+                <Space>
+                  <Button
+                    key="approve"
+                    type="link"
+                    style={{ color: 'green', padding: '4px 0', height: 'auto' }}
+                    onClick={() => handleApprove(record._id)}
+                  >
+                    通过
+                  </Button>
+                  <Button
+                    key="reject"
+                    type="link"
+                    danger
+                    style={{ padding: '4px 0', height: 'auto' }}
+                    onClick={() => handleReject(record._id)}
+                  >
+                    拒绝
+                  </Button>
+                </Space>
+              </Row>
+            )}
+          </Space>
+        );
+      },
     },
   ];
 
