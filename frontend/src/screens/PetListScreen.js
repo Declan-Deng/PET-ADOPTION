@@ -11,7 +11,7 @@ import {
 } from "react-native-paper";
 import { UserContext } from "../context/UserContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_ENDPOINTS } from "../config";
+import { API_ENDPOINTS, API_BASE_URL, STATIC_URLS } from "../config";
 import AdvancedFilterModal from "../components/AdvancedFilterModal";
 import ActiveFiltersBar from "../components/ActiveFiltersBar";
 
@@ -29,6 +29,29 @@ const PetListScreen = ({ navigation, route }) => {
   // 高级筛选相关状态
   const [filterModalVisible, setFilterModalVisible] = React.useState(false);
   const [advancedFilters, setAdvancedFilters] = React.useState({});
+
+  // 处理图片URL，确保使用正确的基础URL
+  const processImageUrl = (url) => {
+    if (!url) return "https://via.placeholder.com/300x200?text=No+Image";
+
+    // 处理完整URL
+    if (url.startsWith("http")) {
+      // 检查URL是否包含原来的API_BASE_URL，如果是则替换为当前的
+      const originalBaseUrl = "http://192.168.31.232:5001";
+      if (url.includes(originalBaseUrl)) {
+        return url.replace(originalBaseUrl, API_BASE_URL);
+      }
+      return url;
+    }
+
+    // 处理相对路径
+    if (url.startsWith("/uploads")) {
+      return `${API_BASE_URL}${url}`;
+    }
+
+    // 其他情况，假设是相对于uploads目录的路径
+    return `${STATIC_URLS.UPLOADS}/${url}`;
+  };
 
   const buildQueryParams = () => {
     const params = new URLSearchParams();
@@ -83,7 +106,18 @@ const PetListScreen = ({ navigation, route }) => {
       if (response.ok) {
         console.log("获取到的宠物列表:", data);
         if (Array.isArray(data)) {
-          setPets(data);
+          // 处理图片URL
+          const processedData = data.map((pet) => {
+            if (pet.images && pet.images.length > 0) {
+              const processedImages = pet.images.map((img) =>
+                processImageUrl(img)
+              );
+              return { ...pet, images: processedImages };
+            }
+            return pet;
+          });
+
+          setPets(processedData);
           setError(null);
         } else {
           console.error("返回的数据不是数组:", data);
@@ -150,11 +184,12 @@ const PetListScreen = ({ navigation, route }) => {
   };
 
   const renderPetCard = ({ item }) => {
-    // 检查图片URL
+    // 使用处理函数确保图片URL正确
     const imageUrl =
       item.images && item.images.length > 0
         ? item.images[0]
         : "https://via.placeholder.com/300x200?text=No+Image";
+
     console.log("宠物图片URL:", imageUrl);
     console.log("宠物数据:", item);
 
