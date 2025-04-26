@@ -1,0 +1,101 @@
+const express = require("express");
+const router = express.Router();
+const { auth } = require("../middleware/auth.middleware");
+const Pet = require("../models/pet.model");
+
+// 获取所有宠物列表
+router.get("/", auth, async (req, res) => {
+  try {
+    const pets = await Pet.find().populate("owner", "username profile");
+    res.json(pets);
+  } catch (error) {
+    console.error("获取宠物列表失败:", error);
+    res.status(500).json({ message: "获取宠物列表失败" });
+  }
+});
+
+// 获取单个宠物信息
+router.get("/:id", auth, async (req, res) => {
+  try {
+    const pet = await Pet.findById(req.params.id).populate(
+      "owner",
+      "username profile"
+    );
+    if (!pet) {
+      return res.status(404).json({ message: "宠物不存在" });
+    }
+    res.json(pet);
+  } catch (error) {
+    console.error("获取宠物信息失败:", error);
+    res.status(500).json({ message: "获取宠物信息失败" });
+  }
+});
+
+// 创建宠物信息
+router.post("/", auth, async (req, res) => {
+  try {
+    const pet = await Pet.create({
+      ...req.body,
+      owner: req.user._id,
+      status: "available",
+    });
+    res.status(201).json(pet);
+  } catch (error) {
+    console.error("创建宠物失败:", error);
+    res.status(500).json({ message: "创建宠物失败" });
+  }
+});
+
+// 更新宠物信息
+router.put("/:id", auth, async (req, res) => {
+  try {
+    const pet = await Pet.findById(req.params.id);
+    if (!pet) {
+      return res.status(404).json({ message: "宠物不存在" });
+    }
+
+    // 只允许管理员或宠物所有者更新
+    if (
+      req.user.role !== "admin" &&
+      pet.owner.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({ message: "没有权限更新此宠物信息" });
+    }
+
+    const updatedPet = await Pet.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body },
+      { new: true }
+    );
+    res.json(updatedPet);
+  } catch (error) {
+    console.error("更新宠物信息失败:", error);
+    res.status(500).json({ message: "更新宠物信息失败" });
+  }
+});
+
+// 删除宠物信息
+router.delete("/:id", auth, async (req, res) => {
+  try {
+    const pet = await Pet.findById(req.params.id);
+    if (!pet) {
+      return res.status(404).json({ message: "宠物不存在" });
+    }
+
+    // 只允许管理员或宠物所有者删除
+    if (
+      req.user.role !== "admin" &&
+      pet.owner.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({ message: "没有权限删除此宠物" });
+    }
+
+    await pet.remove();
+    res.json({ message: "宠物信息已删除" });
+  } catch (error) {
+    console.error("删除宠物失败:", error);
+    res.status(500).json({ message: "删除宠物失败" });
+  }
+});
+
+module.exports = router;

@@ -1,0 +1,49 @@
+import { ProLayout } from "@ant-design/pro-components";
+import { Link, useLocation, history } from "umi";
+import { useState } from "react";
+import { Avatar, Dropdown, Menu } from "antd";
+import { UserOutlined } from "@ant-design/icons";
+
+const BasicLayout: React.FC = (props) => {
+  const location = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
+
+  const userMenu = (
+    <Menu>
+      <Menu.Item key="profile">个人信息</Menu.Item>
+      <Menu.Item key="settings">账号设置</Menu.Item>
+      <Menu.Divider />
+      <Menu.Item key="logout">退出登录</Menu.Item>
+    </Menu>
+  );
+
+  return (
+    <ProLayout
+      title="宠物领养管理系统"
+      logo="/logo.png"
+      location={location}
+      collapsed={collapsed}
+      onCollapse={setCollapsed}
+      menuItemRender={(menuItemProps, defaultDom) => {
+        if (menuItemProps.isUrl || menuItemProps.children) {
+          return defaultDom;
+        }
+        return <Link to={menuItemProps.path || "/"}>{defaultDom}</Link>;
+      }}
+      rightContentRender={() => (
+        <div style={{ marginRight: 24 }}>
+          <Dropdown overlay={userMenu}>
+            <span style={{ cursor: "pointer" }}>
+              <Avatar icon={<UserOutlined />} />
+              <span style={{ marginLeft: 8 }}>管理员</span>
+            </span>
+          </Dropdown>
+        </div>
+      )}
+    >
+      {props.children}
+    </ProLayout>
+  );
+};
+
+export default BasicLayout;

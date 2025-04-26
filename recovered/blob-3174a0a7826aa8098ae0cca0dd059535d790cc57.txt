@@ -1,0 +1,116 @@
+import { PageContainer } from '@ant-design/pro-components';
+import { ProForm, ProFormText, ProFormSelect, ProFormTextArea, ProFormDigit } from '@ant-design/pro-components';
+import { message } from 'antd';
+import { useParams, history } from '@umijs/max';
+import { useEffect, useState } from 'react';
+import { getPet, updatePet, Pet } from '@/services/pet';
+
+const PetEdit = () => {
+  const { id } = useParams<{ id: string }>();
+  const [pet, setPet] = useState<Pet>();
+
+  useEffect(() => {
+    const fetchPet = async () => {
+      if (id) {
+        const data = await getPet(id);
+        setPet(data);
+      }
+    };
+    fetchPet();
+  }, [id]);
+
+  const handleSubmit = async (values: Partial<Pet>) => {
+    try {
+      await updatePet(id!, values);
+      message.success('更新成功');
+      history.push('/pet/list');
+    } catch (error) {
+      message.error('更新失败');
+    }
+  };
+
+  return (
+    <PageContainer title="编辑宠物信息">
+      {pet && (
+        <ProForm
+          initialValues={pet}
+          onFinish={handleSubmit}
+          submitter={{
+            searchConfig: {
+              submitText: '保存',
+            },
+          }}
+        >
+          <ProFormText
+            name="petName"
+            label="宠物名称"
+            rules={[{ required: true, message: '请输入宠物名称' }]}
+          />
+          <ProFormSelect
+            name="type"
+            label="类型"
+            options={[
+              { label: '猫', value: 'cat' },
+              { label: '狗', value: 'dog' },
+              { label: '其他', value: 'other' },
+            ]}
+            rules={[{ required: true, message: '请选择宠物类型' }]}
+          />
+          <ProFormText
+            name="breed"
+            label="品种"
+            rules={[{ required: true, message: '请输入品种' }]}
+          />
+          <ProFormDigit
+            name="age"
+            label="年龄"
+            rules={[{ required: true, message: '请输入年龄' }]}
+            min={0}
+          />
+          <ProFormSelect
+            name="gender"
+            label="性别"
+            options={[
+              { label: '公', value: 'male' },
+              { label: '母', value: 'female' },
+              { label: '未知', value: 'unknown' },
+            ]}
+            rules={[{ required: true, message: '请选择性别' }]}
+          />
+          <ProFormTextArea
+            name="description"
+            label="描述"
+            rules={[{ required: true, message: '请输入描述' }]}
+          />
+          <ProFormTextArea
+            name="requirements"
+            label="领养要求"
+            rules={[{ required: true, message: '请输入领养要求' }]}
+          />
+          <ProFormSelect
+            name="medical.healthStatus"
+            label="健康状况"
+            options={[
+              { label: '健康', value: '健康' },
+              { label: '亚健康', value: '亚健康' },
+              { label: '需要治疗', value: '需要治疗' },
+            ]}
+            rules={[{ required: true, message: '请选择健康状况' }]}
+          />
+          <ProFormSelect
+            name="status"
+            label="状态"
+            options={[
+              { label: '可领养', value: 'available' },
+              { label: '申请中', value: 'pending' },
+              { label: '已领养', value: 'adopted' },
+            ]}
+            rules={[{ required: true, message: '请选择状态' }]}
+          />
+        </ProForm>
+      )}
+    </PageContainer>
+  );
+};
+
+export default PetEdit; 

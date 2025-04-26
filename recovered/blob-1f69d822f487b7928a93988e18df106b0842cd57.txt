@@ -1,0 +1,105 @@
+// @ts-ignore
+/* eslint-disable */
+import { request } from '@umijs/max';
+
+const API_URL = 'http://localhost:3000'; // 后端API地址
+
+export async function login(body: API.LoginParams, options?: { [key: string]: any }) {
+  return request<API.LoginResult>(`${API_URL}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    data: body,
+    ...(options || {}),
+  });
+}
+
+// 宠物相关API
+export async function getPets(params: {
+  current?: number;
+  pageSize?: number;
+  status?: string;
+}) {
+  return request(`${API_URL}/pets`, {
+    method: 'GET',
+    params: {
+      page: params.current,
+      limit: params.pageSize,
+      status: params.status,
+    },
+  });
+}
+
+export async function addPet(data: any) {
+  return request(`${API_URL}/pets`, {
+    method: 'POST',
+    data,
+  });
+}
+
+export async function updatePet(id: string, data: any) {
+  return request(`${API_URL}/pets/${id}`, {
+    method: 'PUT',
+    data,
+  });
+}
+
+export async function deletePet(id: string) {
+  return request(`${API_URL}/pets/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+// 领养申请相关API
+export async function getAdoptions(params: {
+  current?: number;
+  pageSize?: number;
+  status?: string;
+}) {
+  return request(`${API_URL}/adoptions`, {
+    method: 'GET',
+    params: {
+      page: params.current,
+      limit: params.pageSize,
+      status: params.status,
+    },
+  });
+}
+
+export async function updateAdoptionStatus(id: string, status: string) {
+  return request(`${API_URL}/adoptions/${id}/status`, {
+    method: 'PUT',
+    data: { status },
+  });
+}
+
+// 用户管理相关API
+export async function getUsers(params: {
+  current?: number;
+  pageSize?: number;
+  role?: string;
+}) {
+  return request(`${API_URL}/users`, {
+    method: 'GET',
+    params: {
+      page: params.current,
+      limit: params.pageSize,
+      role: params.role,
+    },
+  });
+}
+
+export async function updateUserStatus(id: string, status: string) {
+  return request(`${API_URL}/users/${id}/status`, {
+    method: 'PUT',
+    data: { status },
+  });
+}
+
+// 统计相关API
+export async function getStatistics() {
+  return request(`${API_URL}/statistics`, {
+    method: 'GET',
+  });
+} 

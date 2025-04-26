@@ -1,0 +1,111 @@
+import { PageContainer } from '@ant-design/pro-components';
+import { ActionType, ProTable } from '@ant-design/pro-components';
+import { Button, message, Modal } from 'antd';
+import { useRef } from 'react';
+import { getAllPets, deletePet, Pet } from '@/services/pet';
+import { ExclamationCircleOutlined } from '@ant-design/icons';
+
+const { confirm } = Modal;
+
+const PetList = () => {
+  const actionRef = useRef<ActionType>();
+
+  const handleDelete = async (id: string) => {
+    confirm({
+      title: '确认删除',
+      icon: <ExclamationCircleOutlined />,
+      content: '确定要删除这个宠物信息吗？',
+      onOk: async () => {
+        try {
+          await deletePet(id);
+          message.success('删除成功');
+          actionRef.current?.reload();
+        } catch (error) {
+          message.error('删除失败');
+        }
+      },
+    });
+  };
+
+  const columns = [
+    {
+      title: '宠物名称',
+      dataIndex: 'petName',
+    },
+    {
+      title: '类型',
+      dataIndex: 'type',
+      valueEnum: {
+        cat: '猫',
+        dog: '狗',
+        other: '其他',
+      },
+    },
+    {
+      title: '品种',
+      dataIndex: 'breed',
+    },
+    {
+      title: '年龄',
+      dataIndex: 'age',
+    },
+    {
+      title: '性别',
+      dataIndex: 'gender',
+      valueEnum: {
+        male: '公',
+        female: '母',
+        unknown: '未知',
+      },
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      valueEnum: {
+        available: '可领养',
+        pending: '申请中',
+        adopted: '已领养',
+      },
+    },
+    {
+      title: '操作',
+      valueType: 'option',
+      render: (_: any, record: Pet) => [
+        <Button key="edit" type="link" href={`/pet/edit/${record._id}`}>
+          编辑
+        </Button>,
+        <Button key="delete" type="link" danger onClick={() => handleDelete(record._id)}>
+          删除
+        </Button>,
+      ],
+    },
+  ];
+
+  return (
+    <PageContainer>
+      <ProTable<Pet>
+        headerTitle="宠物列表"
+        actionRef={actionRef}
+        rowKey="_id"
+        search={{
+          labelWidth: 120,
+        }}
+        toolBarRender={() => [
+          <Button type="primary" key="primary" href="/pet/create">
+            添加宠物
+          </Button>,
+        ]}
+        request={async () => {
+          const pets = await getAllPets();
+          return {
+            data: pets,
+            success: true,
+          };
+        }}
+        columns={columns}
+      />
+    </PageContainer>
+  );
+};
+
+export default PetList; 

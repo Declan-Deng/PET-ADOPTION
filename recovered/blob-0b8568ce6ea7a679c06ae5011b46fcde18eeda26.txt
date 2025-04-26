@@ -1,0 +1,102 @@
+import {
+  PageContainer,
+  ProForm,
+  ProFormText,
+  ProFormTextArea,
+  ProFormDigit,
+  ProFormSelect,
+} from '@ant-design/pro-components';
+import { message } from 'antd';
+import { useParams, history } from '@umijs/max';
+import { useEffect, useState } from 'react';
+import { addPet, updatePet } from '@/services/ant-design-pro/api';
+
+const PetEdit: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const [initialValues, setInitialValues] = useState<API.Pet>();
+
+  useEffect(() => {
+    if (id) {
+      // TODO: 获取宠物详情
+      // const response = await getPet(id);
+      // setInitialValues(response.data);
+    }
+  }, [id]);
+
+  const handleSubmit = async (values: API.Pet) => {
+    try {
+      if (id) {
+        await updatePet(id, values);
+        message.success('更新成功');
+      } else {
+        await addPet(values);
+        message.success('添加成功');
+      }
+      history.push('/pets/list');
+    } catch (error) {
+      message.error('操作失败');
+    }
+  };
+
+  return (
+    <PageContainer title={id ? '编辑宠物' : '添加宠物'}>
+      <ProForm<API.Pet>
+        initialValues={initialValues}
+        onFinish={handleSubmit}
+        submitter={{
+          searchConfig: {
+            submitText: id ? '更新' : '添加',
+          },
+        }}
+      >
+        <ProForm.Group>
+          <ProFormText
+            width="md"
+            name="name"
+            label="宠物名称"
+            placeholder="请输入宠物名称"
+            rules={[{ required: true, message: '请输入宠物名称' }]}
+          />
+          <ProFormText
+            width="md"
+            name="breed"
+            label="品种"
+            placeholder="请输入品种"
+            rules={[{ required: true, message: '请输入品种' }]}
+          />
+        </ProForm.Group>
+
+        <ProForm.Group>
+          <ProFormDigit
+            width="md"
+            name="age"
+            label="年龄"
+            placeholder="请输入年龄"
+            min={0}
+            rules={[{ required: true, message: '请输入年龄' }]}
+          />
+          <ProFormSelect
+            width="md"
+            name="status"
+            label="状态"
+            options={[
+              { label: '可领养', value: 'available' },
+              { label: '审核中', value: 'pending' },
+              { label: '已领养', value: 'adopted' },
+            ]}
+            rules={[{ required: true, message: '请选择状态' }]}
+          />
+        </ProForm.Group>
+
+        <ProFormTextArea
+          name="description"
+          label="描述"
+          placeholder="请输入宠物描述"
+          rules={[{ required: true, message: '请输入宠物描述' }]}
+        />
+      </ProForm>
+    </PageContainer>
+  );
+};
+
+export default PetEdit; 

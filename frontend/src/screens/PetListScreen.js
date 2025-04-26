@@ -6,10 +6,14 @@ import {
   Text,
   Chip,
   ActivityIndicator,
+  Button,
+  IconButton,
 } from "react-native-paper";
 import { UserContext } from "../context/UserContext";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_ENDPOINTS } from "../config";
+import AdvancedFilterModal from "../components/AdvancedFilterModal";
+import ActiveFiltersBar from "../components/ActiveFiltersBar";
 
 const PetListScreen = ({ navigation, route }) => {
   const { user } = React.useContext(UserContext);
@@ -22,12 +26,54 @@ const PetListScreen = ({ navigation, route }) => {
   const [refreshing, setRefreshing] = React.useState(false);
   const [error, setError] = React.useState(null);
 
+  // 高级筛选相关状态
+  const [filterModalVisible, setFilterModalVisible] = React.useState(false);
+  const [advancedFilters, setAdvancedFilters] = React.useState({});
+
+  const buildQueryParams = () => {
+    const params = new URLSearchParams();
+
+    // 只有当类型不是"all"时才添加到查询参数
+    if (selectedType !== "all") {
+      params.append("type", selectedType);
+    }
+
+    // 添加其他高级筛选条件
+    Object.entries(advancedFilters).forEach(([key, value]) => {
+      // 跳过 undefined 和 null 值
+      if (value === undefined || value === null) {
+        return;
+      }
+
+      // 处理嵌套对象路径，如 medical.healthStatus
+      if (key === "healthStatus") {
+        params.append("medical.healthStatus", value);
+      } else if (key === "vaccinated") {
+        params.append("medical.vaccinated", value.toString());
+      } else if (key === "sterilized") {
+        params.append("medical.sterilized", value.toString());
+      } else {
+        params.append(key, value);
+      }
+    });
+
+    return params.toString();
+  };
+
   const fetchPets = React.useCallback(async () => {
     try {
       const token = await AsyncStorage.getItem("userToken");
       console.log("开始获取宠物列表, Token:", token ? "存在" : "不存在");
 
-      const response = await fetch(API_ENDPOINTS.PETS, {
+      // 构建查询参数
+      const queryParams = buildQueryParams();
+      const url = queryParams
+        ? `${API_ENDPOINTS.PETS}?${queryParams}`
+        : API_ENDPOINTS.PETS;
+
+      console.log("请求URL:", url);
+
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -51,7 +97,7 @@ const PetListScreen = ({ navigation, route }) => {
       console.error("获取宠物列表失败:", error);
       setError("获取宠物列表失败，请检查网络连接");
     }
-  }, []);
+  }, [selectedType, advancedFilters]);
 
   // 首次加载时获取数据
   React.useEffect(() => {
@@ -65,27 +111,43 @@ const PetListScreen = ({ navigation, route }) => {
     setRefreshing(false);
   }, [fetchPets]);
 
-  // 根据搜索词和类型过滤宠物列表
+  // 根据搜索词和状态过滤宠物列表（已经通过后端API筛选了类型和其他条件）
   const filteredPets = React.useMemo(() => {
     return pets.filter((pet) => {
       const matchesSearch =
         pet.petName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         pet.breed.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        pet.description.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesType = selectedType === "all" || pet.type === selectedType;
+        (pet.description &&
+          pet.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const isAvailable = pet.status === "available";
 
-      return matchesSearch && matchesType && isAvailable;
+      return matchesSearch && isAvailable;
     });
-  }, [pets, searchQuery, selectedType]);
+  }, [pets, searchQuery]);
 
   React.useEffect(() => {
     if (route.params?.filterType) {
       setSelectedType(route.params.filterType);
     }
   }, [route.params?.filterType]);
+
+  const handleApplyFilters = (filters) => {
+    console.log("应用筛选条件:", filters);
+    setAdvancedFilters(filters);
+    setFilterModalVisible(false);
+  };
+
+  const handleRemoveFilter = (key) => {
+    const newFilters = { ...advancedFilters };
+    delete newFilters[key];
+    setAdvancedFilters(newFilters);
+  };
+
+  const handleResetFilters = () => {
+    setSelectedType("all");
+    setAdvancedFilters({});
+  };
 
   const renderPetCard = ({ item }) => {
     // 检查图片URL
@@ -159,12 +221,20 @@ const PetListScreen = ({ navigation, route }) => {
 
   return (
     <View style={styles.container}>
-      <Searchbar
-        placeholder="搜索宠物名称、品种..."
-        onChangeText={setSearchQuery}
-        value={searchQuery}
-        style={styles.searchBar}
-      />
+      <View style={styles.searchContainer}>
+        <Searchbar
+          placeholder="搜索宠物名称、品种..."
+          onChangeText={setSearchQuery}
+          value={searchQuery}
+          style={styles.searchBar}
+        />
+        <IconButton
+          icon="filter-variant"
+          size={24}
+          onPress={() => setFilterModalVisible(true)}
+          style={styles.filterButton}
+        />
+      </View>
 
       <View style={styles.filterContainer}>
         <Chip
@@ -197,6 +267,23 @@ const PetListScreen = ({ navigation, route }) => {
         </Chip>
       </View>
 
+      {/* 显示当前激活的筛选条件 */}
+      <ActiveFiltersBar
+        filters={advancedFilters}
+        onRemoveFilter={handleRemoveFilter}
+      />
+
+      {/* 如果有筛选条件，显示重置按钮 */}
+      {(selectedType !== "all" || Object.keys(advancedFilters).length > 0) && (
+        <Button
+          mode="text"
+          onPress={handleResetFilters}
+          style={styles.resetButton}
+        >
+          重置所有筛选
+        </Button>
+      )}
+
       <FlatList
         data={filteredPets}
         renderItem={renderPetCard}
@@ -206,6 +293,14 @@ const PetListScreen = ({ navigation, route }) => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
+      />
+
+      {/* 高级筛选模态框 */}
+      <AdvancedFilterModal
+        visible={filterModalVisible}
+        onDismiss={() => setFilterModalVisible(false)}
+        onApply={handleApplyFilters}
+        initialFilters={advancedFilters}
       />
     </View>
   );
@@ -221,18 +316,32 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  searchBar: {
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
     margin: 16,
+    marginBottom: 8,
+  },
+  searchBar: {
+    flex: 1,
     elevation: 2,
     borderRadius: 12,
+  },
+  filterButton: {
+    marginLeft: 8,
+    backgroundColor: "#f0f0f0",
   },
   filterContainer: {
     flexDirection: "row",
     paddingHorizontal: 16,
-    marginBottom: 16,
+    marginBottom: 8,
   },
   filterChip: {
     marginRight: 8,
+  },
+  resetButton: {
+    alignSelf: "center",
+    marginVertical: 4,
   },
   listContainer: {
     padding: 16,
@@ -251,28 +360,25 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   petName: {
-    fontSize: 20,
-    fontWeight: "600",
+    fontWeight: "700",
     marginBottom: 4,
   },
   petInfo: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   breed: {
+    marginRight: 8,
     color: "#666",
   },
   age: {
     color: "#666",
   },
   description: {
-    color: "#333",
-    lineHeight: 20,
+    color: "#444",
   },
   errorText: {
-    fontSize: 16,
-    color: "#B00020",
+    color: "red",
     textAlign: "center",
   },
 });

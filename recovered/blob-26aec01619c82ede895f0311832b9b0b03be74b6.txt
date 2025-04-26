@@ -1,0 +1,68 @@
+declare namespace API {
+  type LoginParams = {
+    username: string;
+    password: string;
+  };
+
+  type LoginResult = {
+    token: string;
+    user: {
+      id: string;
+      username: string;
+      role: string;
+    };
+  };
+
+  type Pet = {
+    id: string;
+    name: string;
+    breed: string;
+    age: number;
+    description: string;
+    status: 'available' | 'pending' | 'adopted';
+    images: string[];
+    createdAt: string;
+    updatedAt: string;
+  };
+
+  type Adoption = {
+    id: string;
+    petId: string;
+    userId: string;
+    status: 'pending' | 'approved' | 'rejected';
+    reason: string;
+    createdAt: string;
+    updatedAt: string;
+    pet?: Pet;
+    user?: User;
+  };
+
+  type User = {
+    id: string;
+    username: string;
+    email: string;
+    role: 'user' | 'admin';
+    status: 'active' | 'inactive';
+    createdAt: string;
+    updatedAt: string;
+  };
+
+  type Statistics = {
+    totalPets: number;
+    availablePets: number;
+    adoptedPets: number;
+    pendingAdoptions: number;
+    totalUsers: number;
+  };
+
+  type PageParams = {
+    current?: number;
+    pageSize?: number;
+  };
+
+  type PageResult<T> = {
+    data: T[];
+    total: number;
+    success: boolean;
+  };
+} 

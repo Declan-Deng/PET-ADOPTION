@@ -1,0 +1,104 @@
+import { PageContainer, ProTable } from '@ant-design/pro-components';
+import { Button, message, Modal, Switch } from 'antd';
+import { useRef } from 'react';
+import { getUsers, updateUserStatus } from '@/services/ant-design-pro/api';
+import type { ActionType, ProColumns } from '@ant-design/pro-components';
+import type { API } from '@/services/typings';
+
+const UserList: React.FC = () => {
+  const actionRef = useRef<ActionType>();
+
+  const handleStatusChange = async (id: string, status: string) => {
+    try {
+      await updateUserStatus(id, status);
+      message.success('状态更新成功');
+      actionRef.current?.reload();
+    } catch (error) {
+      message.error('状态更新失败');
+    }
+  };
+
+  const columns: ProColumns<API.User>[] = [
+    {
+      title: '用户名',
+      dataIndex: 'username',
+    },
+    {
+      title: '邮箱',
+      dataIndex: 'email',
+    },
+    {
+      title: '角色',
+      dataIndex: 'role',
+      valueEnum: {
+        user: { text: '普通用户' },
+        admin: { text: '管理员' },
+      },
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      render: (_, record) => (
+        <Switch
+          checked={record.status === 'active'}
+          onChange={(checked) => {
+            Modal.confirm({
+              title: '确认修改',
+              content: `确定要${checked ? '启用' : '禁用'}该用户吗？`,
+              onOk: () => handleStatusChange(record.id, checked ? 'active' : 'inactive'),
+            });
+          }}
+        />
+      ),
+    },
+    {
+      title: '注册时间',
+      dataIndex: 'createdAt',
+      valueType: 'dateTime',
+      hideInSearch: true,
+    },
+    {
+      title: '操作',
+      valueType: 'option',
+      render: (_, record) => [
+        <Button
+          key="adoptions"
+          type="link"
+          onClick={() => {
+            // TODO: 查看用户的领养申请历史
+          }}
+        >
+          领养记录
+        </Button>,
+      ],
+    },
+  ];
+
+  return (
+    <PageContainer>
+      <ProTable<API.User>
+        headerTitle="用户列表"
+        actionRef={actionRef}
+        rowKey="id"
+        search={{
+          labelWidth: 120,
+        }}
+        request={async (params) => {
+          const response = await getUsers({
+            current: params.current,
+            pageSize: params.pageSize,
+            role: params.role,
+          });
+          return {
+            data: response.data,
+            success: true,
+            total: response.total,
+          };
+        }}
+        columns={columns}
+      />
+    </PageContainer>
+  );
+};
+
+export default UserList; 

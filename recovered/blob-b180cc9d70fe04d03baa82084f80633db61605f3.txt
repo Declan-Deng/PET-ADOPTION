@@ -1,0 +1,115 @@
+// 运行时配置
+import { message } from 'antd';
+import { history } from 'umi';
+
+export interface InitialState {
+  currentUser?: {
+    name: string;
+    role: string;
+  };
+}
+
+// 全局初始化数据配置，用于 Layout 用户信息和权限初始化
+// 更多信息见文档：https://umijs.org/docs/api/runtime-config#getinitialstate
+export async function getInitialState(): Promise<InitialState> {
+  const token = localStorage.getItem('token');
+  const userInfo = localStorage.getItem('userInfo');
+
+  if (!token || !userInfo) {
+    history.push('/user/login');
+    return {};
+  }
+
+  try {
+    const user = JSON.parse(userInfo);
+    return {
+      currentUser: {
+        name: user.username,
+        role: user.role,
+      },
+    };
+  } catch (error) {
+    history.push('/user/login');
+    return {};
+  }
+}
+
+export const layout = {
+  logo: 'https://img.alicdn.com/tfs/TB1YHEpwUT1gK0jSZFhXXaAtVXa-28-27.svg',
+  menu: {
+    locale: false,
+  },
+  logout: () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userInfo');
+    history.push('/user/login');
+    message.success('退出登录成功');
+  },
+  rightRender: (initialState: InitialState) => {
+    return {
+      logout: '退出登录',
+      avatar: initialState?.currentUser?.name?.charAt(0)?.toUpperCase() || 'U',
+    };
+  },
+};
+
+// @ts-ignore
+import { RequestConfig } from '@umijs/max';
+
+// 错误处理方案： 错误类型
+enum ErrorShowType {
+  SILENT = 0,
+  WARN_MESSAGE = 1,
+  ERROR_MESSAGE = 2,
+  NOTIFICATION = 3,
+  REDIRECT = 9,
+}
+
+// 与后端约定的响应数据格式
+interface ResponseStructure {
+  success: boolean;
+  data: any;
+  errorCode?: number;
+  errorMessage?: string;
+  showType?: ErrorShowType;
+}
+
+export const request: RequestConfig = {
+  timeout: 10000,
+  errorConfig: {
+    errorHandler: (error: any) => {
+      console.log('请求错误:', error);
+      if (error.response) {
+        if (error.response.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('userInfo');
+          history.push('/user/login');
+          message.error('登录已过期，请重新登录');
+        } else if (error.response.status === 403) {
+          message.error('没有权限访问');
+        } else {
+          message.error('请求失败，请稍后重试');
+        }
+      } else if (error.request) {
+        message.error('网络错误，请检查后端服务是否正常');
+      } else {
+        message.error('请求配置错误');
+      }
+      throw error;
+    },
+  },
+  requestInterceptors: [
+    (config: any) => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
+      return config;
+    },
+  ],
+  responseInterceptors: [
+    (response: any) => {
+      return response;
+    },
+  ],
+};

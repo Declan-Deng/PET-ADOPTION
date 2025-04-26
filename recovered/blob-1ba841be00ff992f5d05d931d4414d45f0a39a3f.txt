@@ -1,0 +1,16 @@
+import { defineConfig } from "umi";
+import routes from "./routes";
+
+export default defineConfig({
+  routes,
+  npmClient: "npm",
+  antd: {},
+  access: {},
+  model: {},
+  initialState: {},
+  request: {},
+  layout: {
+    title: "宠物领养管理系统",
+    locale: false,
+  },
+});

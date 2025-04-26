@@ -1,0 +1,18 @@
+import { defineConfig } from '@umijs/max';
+import routes from './routes';
+
+export default defineConfig({
+  antd: {},
+  access: {},
+  model: {},
+  initialState: {},
+  request: {},
+  layout: {
+    title: '宠物领养管理系统',
+  },
+  routes,
+  npmClient: 'npm',
+  mfsu: {
+    strategy: 'normal',
+  },
+});

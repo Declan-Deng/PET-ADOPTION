@@ -1,0 +1,70 @@
+import { LockOutlined, UserOutlined } from "@ant-design/icons";
+import { LoginForm, ProFormText } from "@ant-design/pro-components";
+import { message } from "antd";
+import { history } from "umi";
+
+const Login: React.FC = () => {
+  const handleSubmit = async (values: {
+    username: string;
+    password: string;
+  }) => {
+    try {
+      // TODO: 调用登录API
+      console.log("登录信息:", values);
+      localStorage.setItem("token", "dummy-token");
+      message.success("登录成功");
+      history.push("/");
+    } catch (error) {
+      message.error("登录失败");
+    }
+  };
+
+  return (
+    <div
+      style={{
+        height: "100vh",
+        background: "#f0f2f5",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <LoginForm
+        title="宠物领养管理系统"
+        subTitle="后台管理登录"
+        onFinish={handleSubmit}
+      >
+        <ProFormText
+          name="username"
+          fieldProps={{
+            size: "large",
+            prefix: <UserOutlined />,
+          }}
+          placeholder="用户名: admin"
+          rules={[
+            {
+              required: true,
+              message: "请输入用户名!",
+            },
+          ]}
+        />
+        <ProFormText.Password
+          name="password"
+          fieldProps={{
+            size: "large",
+            prefix: <LockOutlined />,
+          }}
+          placeholder="密码: 123456"
+          rules={[
+            {
+              required: true,
+              message: "请输入密码！",
+            },
+          ]}
+        />
+      </LoginForm>
+    </div>
+  );
+};
+
+export default Login;

@@ -1,0 +1,119 @@
+import { ProTable } from "@ant-design/pro-components";
+import { Button, message, Modal } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
+import { history } from "umi";
+import { useState } from "react";
+import type { Key } from "react";
+
+interface PetRecord {
+  id: string;
+  name: string;
+  breed: string;
+  age: number;
+  status: "available" | "pending" | "adopted";
+}
+
+const PetList: React.FC = () => {
+  const [selectedRowKeys, setSelectedRowKeys] = useState<Key[]>([]);
+
+  const columns = [
+    {
+      title: "宠物名称",
+      dataIndex: "name",
+      key: "name",
+    },
+    {
+      title: "品种",
+      dataIndex: "breed",
+      key: "breed",
+    },
+    {
+      title: "年龄",
+      dataIndex: "age",
+      key: "age",
+    },
+    {
+      title: "状态",
+      dataIndex: "status",
+      key: "status",
+      valueEnum: {
+        available: { text: "可领养", status: "Success" },
+        pending: { text: "审核中", status: "Processing" },
+        adopted: { text: "已领养", status: "Default" },
+      },
+    },
+    {
+      title: "操作",
+      key: "action",
+      render: (_: unknown, record: PetRecord) => [
+        <Button
+          key="edit"
+          type="link"
+          onClick={() => history.push(`/pets/edit/${record.id}`)}
+        >
+          编辑
+        </Button>,
+        <Button
+          key="delete"
+          type="link"
+          danger
+          onClick={() => {
+            Modal.confirm({
+              title: "确认删除",
+              content: "确定要删除这只宠物吗？",
+              onOk: () => {
+                message.success("删除成功");
+              },
+            });
+          }}
+        >
+          删除
+        </Button>,
+      ],
+    },
+  ];
+
+  return (
+    <ProTable<PetRecord>
+      headerTitle="宠物列表"
+      rowKey="id"
+      search={{
+        labelWidth: 120,
+      }}
+      toolBarRender={() => [
+        <Button
+          key="add"
+          type="primary"
+          onClick={() => history.push("/pets/add")}
+          icon={<PlusOutlined />}
+        >
+          添加宠物
+        </Button>,
+      ]}
+      request={async (params) => {
+        // TODO: 替换为实际的API调用
+        return {
+          data: [
+            {
+              id: "1",
+              name: "小白",
+              breed: "金毛",
+              age: 2,
+              status: "available",
+            },
+            // 更多示例数据...
+          ],
+          success: true,
+          total: 1,
+        };
+      }}
+      columns={columns}
+      rowSelection={{
+        selectedRowKeys,
+        onChange: (keys: Key[]) => setSelectedRowKeys(keys),
+      }}
+    />
+  );
+};
+
+export default PetList;

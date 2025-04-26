@@ -1,0 +1,13 @@
+import { request } from '@umijs/max';
+
+export interface LoginParams {
+  username: string;
+  password: string;
+}
+
+export async function login(params: LoginParams) {
+  return request<{ token: string }>('/api/auth/login', {
+    method: 'POST',
+    data: params,
+  });
+} 

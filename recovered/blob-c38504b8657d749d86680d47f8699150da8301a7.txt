@@ -1,0 +1,86 @@
+import { getAllUsers } from '@/services/user';
+import { PageContainer, ProTable } from '@ant-design/pro-components';
+import { message } from 'antd';
+
+interface User {
+  _id: string;
+  username: string;
+  email: string;
+  role: string;
+  profile: {
+    name: string;
+    phone: string;
+    email: string;
+    address: string;
+  };
+  createdAt: string;
+}
+
+const UserList = () => {
+  const columns = [
+    {
+      title: '用户名',
+      dataIndex: 'username',
+    },
+    {
+      title: '姓名',
+      dataIndex: ['profile', 'name'],
+    },
+    {
+      title: '邮箱',
+      dataIndex: 'email',
+    },
+    {
+      title: '电话',
+      dataIndex: ['profile', 'phone'],
+    },
+    {
+      title: '地址',
+      dataIndex: ['profile', 'address'],
+      ellipsis: true,
+    },
+    {
+      title: '角色',
+      dataIndex: 'role',
+      valueEnum: {
+        admin: { text: '管理员', status: 'Success' },
+        user: { text: '普通用户', status: 'Default' },
+      },
+    },
+    {
+      title: '注册时间',
+      dataIndex: 'createdAt',
+      valueType: 'dateTime',
+    },
+  ];
+
+  return (
+    <PageContainer>
+      <ProTable<User>
+        headerTitle="用户列表"
+        rowKey="_id"
+        search={{
+          labelWidth: 120,
+        }}
+        request={async () => {
+          try {
+            const users = await getAllUsers();
+            return {
+              data: users,
+              success: true,
+            };
+          } catch (error) {
+            message.error('获取用户列表失败');
+            return {
+              data: [],
+              success: false,
+            };
+          }
+        }}
+        columns={columns}
+      />
+    </PageContainer>
+  );
+};
+
+export default UserList;

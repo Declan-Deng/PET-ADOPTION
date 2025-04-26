@@ -1,0 +1,23 @@
+const express = require("express");
+const router = express.Router();
+const { auth } = require("../middleware/auth.middleware");
+const {
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
+} = require("../controllers/user.controller");
+
+// 获取所有用户
+router.get("/", auth, getAllUsers);
+
+// 获取单个用户
+router.get("/:id", auth, getUserById);
+
+// 更新用户
+router.put("/:id", auth, updateUser);
+
+// 删除用户
+router.delete("/:id", auth, deleteUser);
+
+module.exports = router;

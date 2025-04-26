@@ -1,0 +1,108 @@
+import { LogoutOutlined } from '@ant-design/icons';
+import type { Settings as LayoutSettings } from '@ant-design/pro-layout';
+import { message } from 'antd';
+
+export interface InitialState {
+  currentUser?: {
+    name: string;
+    role: string;
+  };
+  settings?: Partial<LayoutSettings>;
+}
+
+export async function getInitialState(): Promise<InitialState> {
+  const token = localStorage.getItem('token');
+  const userInfo = localStorage.getItem('userInfo');
+
+  if (!token || !userInfo) {
+    return {
+      settings: {},
+    };
+  }
+
+  try {
+    const user = JSON.parse(userInfo);
+    return {
+      currentUser: {
+        name: user.username,
+        role: user.role,
+      },
+      settings: {},
+    };
+  } catch (error) {
+    return {
+      settings: {},
+    };
+  }
+}
+
+export const layout = ({ initialState }: { initialState: InitialState }) => {
+  return {
+    logo: 'https://img.alicdn.com/tfs/TB1YHEpwUT1gK0jSZFhXXaAtVXa-28-27.svg',
+    menu: {
+      locale: false,
+    },
+    layout: 'mix',
+    avatarProps: {
+      src: null,
+      size: 'small',
+      title: initialState?.currentUser?.name || 'User',
+    },
+    actionsRender: () => [
+      {
+        icon: <LogoutOutlined />,
+        key: 'logout',
+        onClick: () => {
+          localStorage.removeItem('token');
+          localStorage.removeItem('userInfo');
+          window.location.href = '/user/login';
+          message.success('退出登录成功');
+        },
+        title: '退出登录',
+      },
+    ],
+    ...initialState?.settings,
+  };
+};
+
+export const request = {
+  timeout: 10000,
+  errorConfig: {
+    errorHandler: (error: any) => {
+      if (error.response) {
+        if (error.response.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('userInfo');
+          window.location.href = '/user/login';
+          message.error('登录已过期，请重新登录');
+        } else if (error.response.status === 403) {
+          message.error('没有权限访问');
+        } else {
+          message.error('请求失败，请稍后重试');
+        }
+      } else if (error.request) {
+        message.error('网络错误，请检查后端服务是否正常');
+      } else {
+        message.error('请求配置错误');
+      }
+      throw error;
+    },
+  },
+  requestInterceptors: [
+    (config: any) => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        config.headers = {
+          ...config.headers,
+          Authorization: `Bearer ${token}`,
+        };
+      }
+      return config;
+    },
+  ],
+  responseInterceptors: [
+    (response: any) => {
+      return response;
+    },
+  ],
+};

@@ -1,0 +1,27 @@
+import { RunTimeLayoutConfig } from "umi";
+import { history } from "umi";
+
+// 运行时配置
+export const layout: RunTimeLayoutConfig = () => {
+  return {
+    logo: "/logo.png",
+    menu: {
+      locale: false,
+    },
+    logout: () => {
+      localStorage.removeItem("token");
+      history.push("/user/login");
+    },
+  };
+};
+
+// 路由权限控制
+export function onRouteChange({ location }: { location: any }) {
+  const { pathname } = location;
+  const isLogin = localStorage.getItem("token");
+
+  // 如果没有登录且不在登录页面，重定向到登录页
+  if (!isLogin && pathname !== "/user/login") {
+    history.push("/user/login");
+  }
+}

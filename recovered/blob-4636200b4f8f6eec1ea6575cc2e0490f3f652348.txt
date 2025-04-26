@@ -1,0 +1,153 @@
+import {
+  approveAdoption,
+  getAllAdoptions,
+  rejectAdoption,
+} from '@/services/adoption';
+import { PageContainer, ProTable } from '@ant-design/pro-components';
+import { Button, message, Modal } from 'antd';
+
+const { confirm } = Modal;
+
+interface Adoption {
+  _id: string;
+  pet: {
+    _id: string;
+    petName: string;
+    type: string;
+  };
+  applicant: {
+    _id: string;
+    username: string;
+    profile: {
+      name: string;
+      phone: string;
+    };
+  };
+  status: 'pending' | 'approved' | 'rejected';
+  reason: string;
+  createdAt: string;
+}
+
+const AdoptionList = () => {
+  const handleApprove = async (id: string) => {
+    confirm({
+      title: '确认通过',
+      content: '确定要通过这个领养申请吗？',
+      onOk: async () => {
+        try {
+          await approveAdoption(id);
+          message.success('操作成功');
+          window.location.reload();
+        } catch (error) {
+          message.error('操作失败');
+        }
+      },
+    });
+  };
+
+  const handleReject = async (id: string) => {
+    confirm({
+      title: '确认拒绝',
+      content: '确定要拒绝这个领养申请吗？',
+      onOk: async () => {
+        try {
+          await rejectAdoption(id);
+          message.success('操作成功');
+          window.location.reload();
+        } catch (error) {
+          message.error('操作失败');
+        }
+      },
+    });
+  };
+
+  const columns = [
+    {
+      title: '宠物名称',
+      dataIndex: ['pet', 'petName'],
+    },
+    {
+      title: '宠物类型',
+      dataIndex: ['pet', 'type'],
+      valueEnum: {
+        cat: '猫',
+        dog: '狗',
+        other: '其他',
+      },
+    },
+    {
+      title: '申请人',
+      dataIndex: ['applicant', 'profile', 'name'],
+    },
+    {
+      title: '联系电话',
+      dataIndex: ['applicant', 'profile', 'phone'],
+    },
+    {
+      title: '申请理由',
+      dataIndex: 'reason',
+      ellipsis: true,
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      valueEnum: {
+        pending: { text: '待审核', status: 'processing' },
+        approved: { text: '已通过', status: 'success' },
+        rejected: { text: '已拒绝', status: 'error' },
+      },
+    },
+    {
+      title: '申请时间',
+      dataIndex: 'createdAt',
+      valueType: 'dateTime',
+    },
+    {
+      title: '操作',
+      valueType: 'option',
+      render: (_: any, record: Adoption) => [
+        record.status === 'pending' && (
+          <Button
+            key="approve"
+            type="link"
+            onClick={() => handleApprove(record._id)}
+          >
+            通过
+          </Button>
+        ),
+        record.status === 'pending' && (
+          <Button
+            key="reject"
+            type="link"
+            danger
+            onClick={() => handleReject(record._id)}
+          >
+            拒绝
+          </Button>
+        ),
+      ],
+    },
+  ];
+
+  return (
+    <PageContainer>
+      <ProTable<Adoption>
+        headerTitle="领养申请列表"
+        rowKey="_id"
+        search={{
+          labelWidth: 120,
+        }}
+        request={async () => {
+          const adoptions = await getAllAdoptions();
+          return {
+            data: adoptions,
+            success: true,
+          };
+        }}
+        columns={columns}
+      />
+    </PageContainer>
+  );
+};
+
+export default AdoptionList;

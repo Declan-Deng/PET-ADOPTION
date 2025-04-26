@@ -1,0 +1,75 @@
+export default [
+  {
+    path: "/user",
+    layout: false,
+    routes: [
+      { path: "/user/login", component: "./User/Login" },
+      { path: "/user/register", component: "./User/Register" },
+    ],
+  },
+  {
+    path: "/",
+    component: "@/layouts/BasicLayout",
+    routes: [
+      { path: "/", redirect: "/dashboard" },
+      { path: "/dashboard", component: "./Dashboard" },
+      {
+        path: "/pets",
+        name: "宠物管理",
+        routes: [
+          { path: "/pets/list", name: "宠物列表", component: "./Pets/List" },
+          { path: "/pets/add", name: "添加宠物", component: "./Pets/Edit" },
+          {
+            path: "/pets/edit/:id",
+            name: "编辑宠物",
+            component: "./Pets/Edit",
+          },
+        ],
+      },
+      {
+        path: "/adoptions",
+        name: "领养管理",
+        routes: [
+          {
+            path: "/adoptions/list",
+            name: "申请列表",
+            component: "./Adoptions/List",
+          },
+          {
+            path: "/adoptions/review/:id",
+            name: "申请审核",
+            component: "./Adoptions/Review",
+          },
+        ],
+      },
+      {
+        path: "/users",
+        name: "用户管理",
+        routes: [
+          { path: "/users/list", name: "用户列表", component: "./Users/List" },
+          {
+            path: "/users/roles",
+            name: "角色管理",
+            component: "./Users/Roles",
+          },
+        ],
+      },
+      {
+        path: "/settings",
+        name: "系统设置",
+        routes: [
+          {
+            path: "/settings/basic",
+            name: "基本设置",
+            component: "./Settings/Basic",
+          },
+          {
+            path: "/settings/logs",
+            name: "操作日志",
+            component: "./Settings/Logs",
+          },
+        ],
+      },
+    ],
+  },
+];

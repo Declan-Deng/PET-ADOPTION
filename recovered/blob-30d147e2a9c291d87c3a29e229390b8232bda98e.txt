@@ -1,0 +1,63 @@
+const User = require("../models/user.model");
+
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
+    res.json(users);
+  } catch (error) {
+    console.error("获取用户列表失败:", error);
+    res.status(500).json({ message: "获取用户列表失败" });
+  }
+};
+
+const getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password");
+    if (!user) {
+      return res.status(404).json({ message: "用户不存在" });
+    }
+    res.json(user);
+  } catch (error) {
+    console.error("获取用户信息失败:", error);
+    res.status(500).json({ message: "获取用户信息失败" });
+  }
+};
+
+const updateUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    ).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "用户不存在" });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error("更新用户信息失败:", error);
+    res.status(500).json({ message: "更新用户信息失败" });
+  }
+};
+
+const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "用户不存在" });
+    }
+    res.json({ message: "用户删除成功" });
+  } catch (error) {
+    console.error("删除用户失败:", error);
+    res.status(500).json({ message: "删除用户失败" });
+  }
+};
+
+module.exports = {
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
+};

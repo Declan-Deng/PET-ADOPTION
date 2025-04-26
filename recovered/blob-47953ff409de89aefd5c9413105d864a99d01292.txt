@@ -1,0 +1,72 @@
+export default [
+  {
+    path: '/user',
+    layout: false,
+    routes: [
+      {
+        name: '登录',
+        path: '/user/login',
+        component: './User/Login',
+      },
+    ],
+  },
+  {
+    path: '/',
+    redirect: '/pet/list',
+  },
+  {
+    path: '/pet',
+    name: '宠物管理',
+    routes: [
+      {
+        path: '/pet/list',
+        name: '宠物列表',
+        component: './Pet/List',
+      },
+      {
+        path: '/pet/create',
+        name: '添加宠物',
+        component: './Pet/Create',
+      },
+      {
+        path: '/pet/edit/:id',
+        name: '编辑宠物',
+        component: './Pet/Edit',
+        hideInMenu: true,
+      },
+    ],
+  },
+  {
+    path: '/adoption',
+    name: '领养管理',
+    routes: [
+      {
+        path: '/adoption/list',
+        name: '领养申请列表',
+        component: './Adoption/List',
+      },
+    ],
+  },
+  {
+    path: '/user-management',
+    name: '用户管理',
+    routes: [
+      {
+        path: '/user-management/list',
+        name: '用户列表',
+        component: './User/List',
+      },
+    ],
+  },
+  {
+    path: '/welcome',
+    name: '欢迎',
+    icon: 'smile',
+    component: './Welcome',
+  },
+  {
+    path: '*',
+    layout: false,
+    component: './404',
+  },
+];

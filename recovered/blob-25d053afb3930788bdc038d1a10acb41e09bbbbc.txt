@@ -1,0 +1,25 @@
+import { defineConfig } from "umi";
+import routes from "./routes";
+
+export default defineConfig({
+  routes,
+  npmClient: "npm",
+  plugins: [
+    "@umijs/plugins/dist/antd",
+    "@umijs/plugins/dist/initial-state",
+    "@umijs/plugins/dist/layout",
+  ],
+  antd: {
+    import: true,
+  },
+  access: {},
+  model: {},
+  initialState: {
+    loading: "@/components/Loading",
+  },
+  request: {},
+  layout: {
+    title: "宠物领养管理系统",
+    locale: false,
+  },
+});

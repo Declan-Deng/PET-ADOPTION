@@ -1,0 +1,54 @@
+import { RunTimeLayoutConfig } from '@umijs/max';
+import { AvatarDropdown, AvatarName } from './components/RightContent/AvatarDropdown';
+import { message } from 'antd';
+import { history } from "umi";
+
+// 运行时配置
+export async function getInitialState() {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    return {
+      isLogin: false,
+    };
+  }
+  return {
+    isLogin: true,
+    // TODO: 从后端获取用户信息
+    currentUser: {
+      name: 'Admin',
+      avatar: 'https://gw.alipayobjects.com/zos/antfincdn/XAosXuNZyF/BiazfanxmamNRoxxVxka.png',
+    },
+  };
+}
+
+// 布局配置
+export const layout: RunTimeLayoutConfig = {
+  logo: 'https://gw.alipayobjects.com/zos/rmsportal/KDpgvguMpGfqaHPjicRK.svg',
+  menu: {
+    locale: false,
+  },
+  avatarProps: {
+    render: (props) => {
+      return <AvatarDropdown {...props} />;
+    },
+  },
+  logout: () => {
+    localStorage.removeItem('token');
+    message.success('退出登录成功');
+  },
+};
+
+// 路由权限控制
+export function onRouteChange({
+  location,
+}: {
+  location: { pathname: string };
+}) {
+  const { pathname } = location;
+  const isLogin = localStorage.getItem("token");
+
+  // 如果没有登录且不在登录页面，重定向到登录页
+  if (!isLogin && pathname !== "/user/login") {
+    history.push("/user/login");
+  }
+}

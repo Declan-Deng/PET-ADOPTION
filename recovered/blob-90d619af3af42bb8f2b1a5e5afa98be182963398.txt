@@ -1,0 +1,96 @@
+const express = require("express");
+const router = express.Router();
+const { protect } = require("../middleware/auth.middleware");
+const {
+  createAdoption,
+  getUserAdoptions,
+  getPetAdoptions,
+  getAdoptionById,
+  cancelAdoption,
+  approveAdoption,
+} = require("../controllers/adoption.controller");
+const Adoption = require("../models/adoption.model");
+const Pet = require("../models/pet.model");
+
+// 公开路由
+router.get("/", protect, getUserAdoptions);
+router.get("/pet/:petId", protect, getPetAdoptions);
+router.get("/:id", protect, getAdoptionById);
+
+// 需要登录的路由
+router.post("/", protect, createAdoption);
+router.delete("/:id", protect, cancelAdoption);
+router.put("/:id/approve", protect, approveAdoption);
+
+// 获取所有领养申请
+router.get("/", protect, async (req, res) => {
+  try {
+    const adoptions = await Adoption.find()
+      .populate("pet", "petName type")
+      .populate("applicant", "username profile");
+    res.json(adoptions);
+  } catch (error) {
+    console.error("获取领养申请列表失败:", error);
+    res.status(500).json({ message: "获取领养申请列表失败" });
+  }
+});
+
+// 获取单个领养申请
+router.get("/:id", protect, async (req, res) => {
+  try {
+    const adoption = await Adoption.findById(req.params.id)
+      .populate("pet", "petName type")
+      .populate("applicant", "username profile");
+    if (!adoption) {
+      return res.status(404).json({ message: "领养申请不存在" });
+    }
+    res.json(adoption);
+  } catch (error) {
+    console.error("获取领养申请失败:", error);
+    res.status(500).json({ message: "获取领养申请失败" });
+  }
+});
+
+// 通过领养申请
+router.post("/:id/approve", protect, async (req, res) => {
+  try {
+    const adoption = await Adoption.findById(req.params.id);
+    if (!adoption) {
+      return res.status(404).json({ message: "领养申请不存在" });
+    }
+
+    adoption.status = "approved";
+    await adoption.save();
+
+    // 更新宠物状态
+    await Pet.findByIdAndUpdate(adoption.pet, { status: "adopted" });
+
+    res.json({ message: "领养申请已通过" });
+  } catch (error) {
+    console.error("通过领养申请失败:", error);
+    res.status(500).json({ message: "通过领养申请失败" });
+  }
+});
+
+// 拒绝领养申请
+router.post("/:id/reject", protect, async (req, res) => {
+  try {
+    const adoption = await Adoption.findById(req.params.id);
+    if (!adoption) {
+      return res.status(404).json({ message: "领养申请不存在" });
+    }
+
+    adoption.status = "rejected";
+    await adoption.save();
+
+    // 更新宠物状态为可领养
+    await Pet.findByIdAndUpdate(adoption.pet, { status: "available" });
+
+    res.json({ message: "领养申请已拒绝" });
+  } catch (error) {
+    console.error("拒绝领养申请失败:", error);
+    res.status(500).json({ message: "拒绝领养申请失败" });
+  }
+});
+
+module.exports = router;

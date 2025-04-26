@@ -1,0 +1,40 @@
+import { PageContainer, StatisticCard } from "@ant-design/pro-components";
+import { Card, Col, Row } from "antd";
+
+const Dashboard: React.FC = () => {
+  return (
+    <PageContainer>
+      <Row gutter={16}>
+        <Col span={6}>
+          <StatisticCard title="待审核申请" value={5} status="processing" />
+        </Col>
+        <Col span={6}>
+          <StatisticCard title="可领养宠物" value={12} status="success" />
+        </Col>
+        <Col span={6}>
+          <StatisticCard title="已领养宠物" value={8} status="default" />
+        </Col>
+        <Col span={6}>
+          <StatisticCard title="注册用户" value={25} status="default" />
+        </Col>
+      </Row>
+
+      <Row gutter={16} style={{ marginTop: 24 }}>
+        <Col span={12}>
+          <Card title="最近领养申请">
+            {/* TODO: 添加最近申请列表 */}
+            <p>暂无数据</p>
+          </Card>
+        </Col>
+        <Col span={12}>
+          <Card title="最新添加宠物">
+            {/* TODO: 添加最新宠物列表 */}
+            <p>暂无数据</p>
+          </Card>
+        </Col>
+      </Row>
+    </PageContainer>
+  );
+};
+
+export default Dashboard;

@@ -1,0 +1,68 @@
+export namespace API {
+  export type LoginParams = {
+    username: string;
+    password: string;
+  };
+
+  export type LoginResult = {
+    token: string;
+    user: {
+      id: string;
+      username: string;
+      role: string;
+    };
+  };
+
+  export type Pet = {
+    id: string;
+    name: string;
+    breed: string;
+    age: number;
+    description: string;
+    status: 'available' | 'pending' | 'adopted';
+    images: string[];
+    createdAt: string;
+    updatedAt: string;
+  };
+
+  export type Adoption = {
+    id: string;
+    petId: string;
+    userId: string;
+    status: 'pending' | 'approved' | 'rejected';
+    reason: string;
+    createdAt: string;
+    updatedAt: string;
+    pet?: Pet;
+    user?: User;
+  };
+
+  export type User = {
+    id: string;
+    username: string;
+    email: string;
+    role: 'user' | 'admin';
+    status: 'active' | 'inactive';
+    createdAt: string;
+    updatedAt: string;
+  };
+
+  export type Statistics = {
+    totalPets: number;
+    availablePets: number;
+    adoptedPets: number;
+    pendingAdoptions: number;
+    totalUsers: number;
+  };
+
+  export type PageParams = {
+    current?: number;
+    pageSize?: number;
+  };
+
+  export type PageResult<T> = {
+    data: T[];
+    total: number;
+    success: boolean;
+  };
+} 
