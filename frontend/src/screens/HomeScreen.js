@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Image,
   RefreshControl,
+  FlatList,
 } from "react-native";
 import {
   Surface,
@@ -33,6 +34,8 @@ const HomeScreen = ({ navigation, route }) => {
   const [loading, setLoading] = React.useState(true);
   const [pets, setPets] = React.useState([]);
   const [refreshing, setRefreshing] = React.useState(false);
+  const [activeSlide, setActiveSlide] = React.useState(0);
+  const flatListRef = React.useRef(null);
 
   // 获取宠物列表
   const fetchPets = React.useCallback(async () => {
@@ -148,10 +151,44 @@ const HomeScreen = ({ navigation, route }) => {
     navigation.navigate("PetList", { filterType: type });
   };
 
-  const renderFeaturedPet = (pet, index) => {
+  // 轮播自动滚动定时器
+  React.useEffect(() => {
+    let intervalId;
+
+    if (featuredPets.length > 1) {
+      intervalId = setInterval(() => {
+        if (flatListRef.current) {
+          const nextIndex = (activeSlide + 1) % featuredPets.length;
+          flatListRef.current.scrollToIndex({
+            index: nextIndex,
+            animated: true,
+          });
+          setActiveSlide(nextIndex);
+        }
+      }, 3000); // 每3秒轮播一次
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [activeSlide, featuredPets.length]);
+
+  // 处理轮播滚动结束事件
+  const handleViewableItemsChanged = React.useRef(({ viewableItems }) => {
+    if (viewableItems.length > 0) {
+      setActiveSlide(viewableItems[0].index);
+    }
+  }).current;
+
+  const viewabilityConfig = {
+    itemVisiblePercentThreshold: 50,
+  };
+
+  const renderFeaturedItem = ({ item, index }) => {
     return (
       <Animated.View
-        key={pet._id}
         style={[
           {
             opacity: fadeAnim,
@@ -160,11 +197,11 @@ const HomeScreen = ({ navigation, route }) => {
         ]}
       >
         <Card
-          style={[styles.featuredCard, { marginLeft: index === 0 ? 20 : 0 }]}
+          style={[styles.featuredCard]}
           onPress={() =>
             navigation.navigate("PetDetail", {
-              petId: pet._id,
-              pet: pet,
+              petId: item._id,
+              pet: item,
             })
           }
         >
@@ -172,15 +209,15 @@ const HomeScreen = ({ navigation, route }) => {
             <Card.Cover
               source={{
                 uri:
-                  pet.images && pet.images.length > 0
-                    ? pet.images[0]
+                  item.images && item.images.length > 0
+                    ? item.images[0]
                     : "https://via.placeholder.com/300x200?text=No+Image",
               }}
               style={styles.featuredImage}
-              onLoadStart={() => handleImageLoadStart(pet._id)}
-              onLoadEnd={() => handleImageLoadEnd(pet._id)}
+              onLoadStart={() => handleImageLoadStart(item._id)}
+              onLoadEnd={() => handleImageLoadEnd(item._id)}
             />
-            {imageLoadingStates[pet._id] && (
+            {imageLoadingStates[item._id] && (
               <View style={styles.imageLoadingContainer}>
                 <ActivityIndicator size="large" color="#1a237e" />
               </View>
@@ -188,20 +225,37 @@ const HomeScreen = ({ navigation, route }) => {
           </View>
           <Card.Content style={styles.cardContent}>
             <Title style={styles.cardTitle}>
-              {pet.petName || "未命名宠物"}
+              {item.petName || "未命名宠物"}
             </Title>
             <View style={styles.cardInfo}>
-              <Text style={styles.cardInfoText}>{pet.breed}</Text>
+              <Text style={styles.cardInfoText}>{item.breed}</Text>
               <Text style={styles.cardInfoText}>
-                {pet.age ? `${pet.age}岁` : "年龄未知"}
+                {item.age ? `${item.age}岁` : "年龄未知"}
               </Text>
             </View>
             <Paragraph numberOfLines={2} style={styles.cardDescription}>
-              {pet.description}
+              {item.description}
             </Paragraph>
           </Card.Content>
         </Card>
       </Animated.View>
+    );
+  };
+
+  // 渲染轮播指示器
+  const renderPagination = () => {
+    return (
+      <View style={styles.paginationContainer}>
+        {featuredPets.map((_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.paginationDot,
+              i === activeSlide ? styles.paginationDotActive : null,
+            ]}
+          />
+        ))}
+      </View>
     );
   };
 
@@ -267,15 +321,29 @@ const HomeScreen = ({ navigation, route }) => {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>推荐领养</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.featuredScroll}
-            decelerationRate="fast"
-            snapToInterval={CARD_WIDTH + 16}
-          >
-            {featuredPets.map((pet, index) => renderFeaturedPet(pet, index))}
-          </ScrollView>
+          {featuredPets.length > 0 ? (
+            <View style={styles.carouselContainer}>
+              <FlatList
+                ref={flatListRef}
+                data={featuredPets}
+                renderItem={renderFeaturedItem}
+                keyExtractor={(item) => item._id}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                snapToInterval={CARD_WIDTH}
+                decelerationRate="fast"
+                onViewableItemsChanged={handleViewableItemsChanged}
+                viewabilityConfig={viewabilityConfig}
+                contentContainerStyle={styles.carouselList}
+              />
+              {renderPagination()}
+            </View>
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>暂无推荐宠物</Text>
+            </View>
+          )}
         </View>
 
         <Animated.View
@@ -358,13 +426,16 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     color: "#1a237e",
   },
-  featuredScroll: {
-    paddingRight: 20,
-    paddingBottom: 8,
+  carouselContainer: {
+    position: "relative",
+    paddingBottom: 30,
+  },
+  carouselList: {
+    paddingHorizontal: 0,
   },
   featuredCard: {
     width: CARD_WIDTH,
-    marginRight: 16,
+    marginHorizontal: (width - CARD_WIDTH) / 2,
     borderRadius: 12,
     elevation: 4,
   },
@@ -419,6 +490,37 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.5)",
+  },
+  paginationContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 10,
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
+    backgroundColor: "#bbbbbb",
+  },
+  paginationDotActive: {
+    backgroundColor: "#1a237e",
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+  },
+  emptyContainer: {
+    height: 150,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#666",
   },
 });
 

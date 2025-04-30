@@ -5,6 +5,7 @@ import {
   FlatList,
   RefreshControl,
   Alert,
+  Linking,
 } from "react-native";
 import {
   Card,
@@ -103,6 +104,26 @@ const MyAdoptionsScreen = ({ navigation }) => {
       setShowConfirmDialog(false);
       setSelectedAdoption(null);
     }
+  };
+
+  const handleCall = (phone) => {
+    if (!phone) {
+      Alert.alert("提示", "无法获取联系电话");
+      return;
+    }
+
+    Linking.canOpenURL(`tel:${phone}`)
+      .then((supported) => {
+        if (supported) {
+          return Linking.openURL(`tel:${phone}`);
+        } else {
+          Alert.alert("提示", "无法打开电话应用");
+        }
+      })
+      .catch((error) => {
+        console.error("拨打电话失败:", error);
+        Alert.alert("错误", "拨打电话失败，请重试");
+      });
   };
 
   if (!user) {
@@ -215,6 +236,17 @@ const MyAdoptionsScreen = ({ navigation }) => {
             取消申请
           </Button>
         )}
+        {item.status === "approved" && item.pet?.owner?.profile?.phone && (
+          <Button
+            mode="outlined"
+            onPress={() => handleCall(item.pet.owner.profile.phone)}
+            style={styles.callButton}
+            icon="phone"
+            color="#0277BD"
+          >
+            电话联系
+          </Button>
+        )}
       </View>
     </Surface>
   );
@@ -320,6 +352,10 @@ const styles = StyleSheet.create({
   cancelButton: {
     marginTop: 16,
     borderColor: "#d32f2f",
+  },
+  callButton: {
+    marginTop: 16,
+    borderColor: "#0277BD",
   },
 });
 

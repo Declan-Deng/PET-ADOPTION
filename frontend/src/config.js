@@ -1,5 +1,5 @@
 // API配置
-export const API_BASE_URL = "http://192.168.8.235:5001";
+export const API_BASE_URL = "http://192.168.31.232:5001";
 
 // API端点
 export const API_ENDPOINTS = {

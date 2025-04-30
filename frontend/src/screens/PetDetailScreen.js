@@ -520,17 +520,32 @@ const PetDetailScreen = ({ route, navigation }) => {
               left={(props) => <List.Icon {...props} icon="account" />}
             />
             <Divider />
-            <List.Item
-              title={pet.owner?.profile?.phone || pet.owner?.phone || "未设置"}
-              description="联系电话"
-              left={(props) => <List.Icon {...props} icon="phone" />}
-              onPress={() => {
-                const phone = pet.owner?.profile?.phone || pet.owner?.phone;
-                if (phone) {
-                  Linking.openURL(`tel:${phone}`);
+            {isOwner || (userAdoption && userAdoption.status === "approved") ? (
+              <List.Item
+                title={
+                  pet.owner?.profile?.phone || pet.owner?.phone || "未设置"
                 }
-              }}
-            />
+                description="联系电话"
+                left={(props) => <List.Icon {...props} icon="phone" />}
+                onPress={() => {
+                  const phone = pet.owner?.profile?.phone || pet.owner?.phone;
+                  if (phone) {
+                    Linking.openURL(`tel:${phone}`);
+                  }
+                }}
+              />
+            ) : (
+              <List.Item
+                title={
+                  <Text style={styles.hiddenPhone}>[ 申请通过后可见 ]</Text>
+                }
+                description="联系电话"
+                left={(props) => <List.Icon {...props} icon="phone" />}
+                onPress={() => {
+                  Alert.alert("提示", "申请通过后才能查看联系电话");
+                }}
+              />
+            )}
             <Divider />
             <List.Item
               title={
@@ -650,6 +665,20 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     color: "#666",
     textAlign: "center",
+  },
+  normalText: {
+    color: "#333",
+  },
+  hiddenPhone: {
+    fontStyle: "italic",
+    color: "#9e9e9e",
+    borderWidth: 1,
+    borderColor: "#e0e0e0",
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    textAlign: "left",
+    fontSize: 14,
   },
 });
 

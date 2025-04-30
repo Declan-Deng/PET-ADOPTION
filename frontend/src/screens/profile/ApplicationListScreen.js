@@ -5,6 +5,7 @@ import {
   FlatList,
   RefreshControl,
   Alert,
+  Linking,
 } from "react-native";
 import {
   Text,
@@ -174,6 +175,26 @@ const ApplicationListScreen = ({ route, navigation }) => {
     }
   };
 
+  const handleCall = (phone) => {
+    if (!phone || phone === "未设置") {
+      Alert.alert("提示", "该用户未设置联系电话");
+      return;
+    }
+
+    Linking.canOpenURL(`tel:${phone}`)
+      .then((supported) => {
+        if (supported) {
+          return Linking.openURL(`tel:${phone}`);
+        } else {
+          Alert.alert("提示", "无法打开电话应用");
+        }
+      })
+      .catch((error) => {
+        console.error("拨打电话失败:", error);
+        Alert.alert("错误", "拨打电话失败，请重试");
+      });
+  };
+
   const renderItem = ({ item }) => (
     <Surface style={styles.itemContainer} elevation={1}>
       <List.Item
@@ -240,6 +261,16 @@ const ApplicationListScreen = ({ route, navigation }) => {
             </Button>
           </View>
         )}
+
+        <Button
+          mode="outlined"
+          onPress={() => handleCall(item.applicant?.profile?.phone)}
+          style={styles.callButton}
+          icon="phone"
+          color="#0277BD"
+        >
+          电话联系
+        </Button>
       </View>
     </Surface>
   );
@@ -386,6 +417,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginTop: 16,
+    marginBottom: 16,
   },
   approveButton: {
     flex: 1,
@@ -394,6 +426,9 @@ const styles = StyleSheet.create({
   rejectButton: {
     flex: 1,
     marginLeft: 8,
+  },
+  callButton: {
+    marginTop: 8,
   },
 });
 
